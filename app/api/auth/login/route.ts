@@ -3,10 +3,7 @@ import { db } from "@/lib/db";
 import { verifyPassword, createSession } from "@/lib/auth";
 import { z } from "zod";
 
-const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-});
+const schema = z.object({ email: z.string().email(), password: z.string().min(1) });
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -16,13 +13,22 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Enter a valid email and password." }, { status: 400 });
   }
-  const { email, password } = parsed.data;
 
-  const user = await db.findUserByEmail(email);
-  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+  const user = await db.findUserByEmail(parsed.data.email);
+  if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
-  await createSession(user.id);
-  return NextResponse.json({ id: user.id, email: user.email, name: user.name });
+  if (!user.emailVerified) {
+    return NextResponse.json(
+      { error: "Please verify your email before signing in.", code: "EMAIL_NOT_VERIFIED" },
+      { status: 403 }
+    );
+  }
+
+  await createSession(user.id, user.role);
+  return NextResponse.json({
+    id: user.id, email: user.email, name: user.name, role: user.role,
+    redirectTo: user.role === "affiliate" ? "/affiliate/dashboard" : "/dashboard",
+  });
 }

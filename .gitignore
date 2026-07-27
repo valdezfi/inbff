@@ -42,3 +42,18 @@ next-env.d.ts
 
 # local dev database (JSON file fallback — may contain real user data)
 /data/db.json
+
+# ─── Windows artifacts (never commit these) ────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+nul
+nul.txt
+
+# ─── Linux / macOS ─────────────────────────────────────────────────────────
+*.swp
+*.swo
+*~
+.cache/

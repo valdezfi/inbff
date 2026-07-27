@@ -81,7 +81,7 @@ export default function PurchaseForm({
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-2.5 rounded-full bg-accent text-white font-medium hover:bg-accent-dark transition-colors disabled:opacity-60"
+        className="w-full py-2.5 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors disabled:opacity-60"
       >
         {loading ? "Placing order…" : "Simulate purchase"}
       </button>

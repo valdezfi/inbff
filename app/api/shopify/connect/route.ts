@@ -44,10 +44,17 @@ export async function POST(req: NextRequest) {
   const scopes = process.env.SHOPIFY_SCOPES ?? "read_orders";
 
   if (!apiKey || !redirectUri) {
-    return NextResponse.json(
-      { error: "Shopify integration is not configured. Set SHOPIFY_API_KEY and SHOPIFY_REDIRECT_URI." },
-      { status: 503 }
-    );
+    // No Shopify app configured — demo/dev mode: save the store directly
+    // and skip OAuth so the rest of the flow can be demonstrated.
+    const { nanoid } = await import("nanoid");
+    const { db } = await import("@/lib/db");
+    const store = await db.upsertStore({
+      id: nanoid(),
+      userId: session.userId,
+      shopDomain,
+      accessToken: null,
+    });
+    return NextResponse.json({ store, redirectUrl: null });
   }
 
   // Generate a random nonce to prevent CSRF during the OAuth callback.

@@ -3,11 +3,13 @@ import { nanoid } from "nanoid";
 import { db } from "@/lib/db";
 import { hashPassword, createSession } from "@/lib/auth";
 import { z } from "zod";
+import { randomBytes } from "crypto";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email address."),
   password: z.string().min(8, "Password must be at least 8 characters."),
-  name: z.string().min(1, "Name is required.").max(100, "Name is too long."),
+  name: z.string().min(1, "Name is required.").max(100),
+  role: z.enum(["creator", "affiliate"]).default("creator"),
 });
 
 export async function POST(req: NextRequest) {
@@ -18,19 +20,55 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
-  const { email, password, name } = parsed.data;
+  const { email, password, name, role } = parsed.data;
 
   const existing = await db.findUserByEmail(email);
   if (existing) {
-    return NextResponse.json(
-      { error: "An account with this email already exists." },
-      { status: 409 }
-    );
+    return NextResponse.json({ error: "An account with this email already exists." }, { status: 409 });
   }
 
   const passwordHash = await hashPassword(password);
-  const user = await db.createUser({ id: nanoid(), email, passwordHash, name });
-  await createSession(user.id);
+  const hasMailgun = !!process.env.MAILGUN_API_KEY;
 
-  return NextResponse.json({ id: user.id, email: user.email, name: user.name });
+  // In dev (no Mailgun), skip email verification entirely
+  const emailVerified = !hasMailgun;
+  const verificationToken = hasMailgun ? randomBytes(32).toString("hex") : null;
+  const verificationTokenExpiry = hasMailgun
+    ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    : null;
+
+  const user = await db.createUser({
+    id: nanoid(),
+    email,
+    passwordHash,
+    name,
+    role,
+    emailVerified,
+    verificationToken,
+    verificationTokenExpiry,
+    stripeAccountId: null,
+  });
+
+  if (hasMailgun && verificationToken) {
+    const { sendEmail, verificationEmailHtml, verificationEmailText } = await import("@/lib/email");
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const verifyUrl = `${appUrl}/verify-email?token=${verificationToken}`;
+    await sendEmail({
+      to: email,
+      subject: "Verify your inBFF account",
+      html: verificationEmailHtml(name, verifyUrl),
+      text: verificationEmailText(name, verifyUrl),
+    });
+    return NextResponse.json(
+      { message: "Account created. Check your email to verify your account." },
+      { status: 201 }
+    );
+  }
+
+  // Dev: auto-login
+  await createSession(user.id, user.role);
+  return NextResponse.json({
+    id: user.id, email: user.email, name: user.name, role: user.role,
+    redirectTo: role === "affiliate" ? "/affiliate/dashboard" : "/dashboard",
+  });
 }

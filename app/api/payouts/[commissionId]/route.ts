@@ -77,9 +77,9 @@ export async function POST(
       try {
         const transfer = await stripe.transfers.create({
           amount: amountInCents,
-          currency: "usd",
+          currency: program.currency?.toLowerCase() ?? "usd",
           destination: stripeAccountId,
-          description: `Commission payout — program ${commission.programId}`,
+          description: `inBFF commission payout — ${program.name}`,
           metadata: {
             commissionId: commission.id,
             programId: commission.programId,

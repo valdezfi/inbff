@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid, customAlphabet } from "nanoid";
 import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { z } from "zod";
 
 const codeAlphabet = customAlphabet("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", 7);
@@ -16,6 +17,8 @@ const schema = z.object({
  *
  * Public — anyone with a program invite link can call this to join as an
  * affiliate.  Returns the affiliate record and their unique referral path.
+ * If the user is authenticated, their userId is linked to the affiliate record
+ * so they can later access the affiliate portal and request payouts.
  */
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -26,6 +29,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
   const { programId, name, email } = parsed.data;
+
+  // Check if user is authenticated — link the affiliate record to their account
+  const session = await getSession();
 
   const program = await db.findProgramById(programId);
   if (!program) {
@@ -48,9 +54,11 @@ export async function POST(req: NextRequest) {
   const affiliate = await db.createAffiliate({
     id: nanoid(),
     programId: program.id,
+    userId: session?.userId ?? null,
     name,
     email,
     referralCode: codeAlphabet(),
+    status: "active",
   });
 
   const stores = await db.findStoresByUserId(program.userId);

@@ -28,7 +28,7 @@ export default async function StorePage({
   return (
     <main className="flex-1 flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-sm">
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent mb-4 text-center">
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-blue-400 mb-4 text-center">
           {shopDomain}
         </p>
         <div className="rounded-xl border border-black/10 p-6">

@@ -51,21 +51,29 @@ export async function POST(req: NextRequest) {
     currency,
   });
 
+  const isNewOrder = !order.createdAt || new Date(order.createdAt).getTime() > Date.now() - 5000;
+
   let commission = null;
-  if (affiliate && program && order) {
-    const commissionAmount =
-      Math.round(amount * (program.commissionRate / 100) * 100) / 100;
-    commission = await db.createCommission({
-      id: nanoid(),
-      orderId: order.id,
-      affiliateId: affiliate.id,
-      programId: program.id,
-      amount: commissionAmount,
-      rate: program.commissionRate,
-      status: "pending",
-      paidAt: null,
-      stripeTransferId: null,
-    });
+  if (affiliate && program && order && isNewOrder) {
+    // Check if a commission already exists for this order (idempotent)
+    const existingCommissions = await db.findCommissionsByProgramId(program.id);
+    const alreadyCommissioned = existingCommissions.some(c => c.orderId === order.id);
+
+    if (!alreadyCommissioned) {
+      const commissionAmount =
+        Math.round(amount * (program.commissionRate / 100) * 100) / 100;
+      commission = await db.createCommission({
+        id: nanoid(),
+        orderId: order.id,
+        affiliateId: affiliate.id,
+        programId: program.id,
+        amount: commissionAmount,
+        rate: program.commissionRate,
+        status: "pending",
+        paidAt: null,
+        stripeTransferId: null,
+      });
+    }
   }
 
   return NextResponse.json({ order, commission });

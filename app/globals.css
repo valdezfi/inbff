@@ -1,21 +1,197 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f8faf9;
-  --foreground: #10201b;
-  --accent: #0f7a5c;
-  --accent-dark: #0b5c45;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
-  --color-accent-dark: var(--accent-dark);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  /* Inter is loaded via <link> in layout.tsx — no @import url() needed here */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ─── Dark theme (landing / public pages) ─────────────────────────────────── */
+:root {
+  --background: #0A0A0B;
+  --foreground: #EDEDED;
+  --card: #0F0F11;
+  --card-foreground: #EDEDED;
+  --primary: #3B82F6;
+  --primary-foreground: #ffffff;
+  --secondary: #17171A;
+  --secondary-foreground: #EDEDED;
+  --muted: #17171A;
+  --muted-foreground: rgba(237, 237, 237, 0.55);
+  --accent: #3B82F6;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.10);
+  --ring: #3B82F6;
+  --success: #10b981;
+  --warning: #f59e0b;
+}
+
+html {
+  background: var(--background);
+  color: var(--foreground);
+  color-scheme: dark;
 }
 
 body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
+
+/* ─── Dashboard — premium light theme ────────────────────────────────────── */
+.dash {
+  --background: #f4f6fa;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #334155;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #4f46e5;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #ffffff;
+  --ring: #4f46e5;
+  --success: #059669;
+  --warning: #d97706;
+  background: var(--background);
+  color: var(--foreground);
+  color-scheme: light;
+}
+
+/* ─── Sidebar gradients ───────────────────────────────────────────────────── */
+.sidebar-gradient {
+  background: linear-gradient(180deg, #1e1b4b 0%, #312e81 40%, #1e1b4b 100%);
+}
+.sidebar-gradient-affiliate {
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+}
+
+/* ─── Card shadows ────────────────────────────────────────────────────────── */
+.card-shadow {
+  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.06);
+}
+.card-shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+}
+.card-shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05);
+}
+
+/* ─── Stat card gradient backgrounds ─────────────────────────────────────── */
+.stat-indigo  { background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); }
+.stat-violet  { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); }
+.stat-emerald { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); }
+.stat-amber   { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); }
+.stat-rose    { background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); }
+.stat-sky     { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); }
+
+/* ─── Animations ──────────────────────────────────────────────────────────── */
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.cursor-blink { animation: blink 1s step-end infinite; }
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { animation: fade-in-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in { animation: fade-in 0.35s ease both; }
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-right { animation: slide-in-right 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in { animation: scale-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes spin-once {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Staggered children */
+.stagger > * { animation: fade-in-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 70ms; }
+.stagger > *:nth-child(3) { animation-delay: 140ms; }
+.stagger > *:nth-child(4) { animation-delay: 210ms; }
+.stagger > *:nth-child(5) { animation-delay: 280ms; }
+.stagger > *:nth-child(6) { animation-delay: 350ms; }
+.stagger > *:nth-child(7) { animation-delay: 420ms; }
+.stagger > *:nth-child(8) { animation-delay: 490ms; }
+
+/* ─── Landing background grain + glow ───────────────────────────────────── */
+.bg-grain {
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59, 130, 246, 0.15), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(139, 92, 246, 0.08), transparent 60%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ─── Focus ring ─────────────────────────────────────────────────────────── */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* ─── Scrollbar (dashboard) ─────────────────────────────────────────────── */
+.dash ::-webkit-scrollbar { width: 5px; height: 5px; }
+.dash ::-webkit-scrollbar-track { background: transparent; }
+.dash ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.dash ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ─── Sidebar nav states ─────────────────────────────────────────────────── */
+.nav-item-active { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(8px); }
+.nav-item-hover:hover { background: rgba(255, 255, 255, 0.08); }
+
+/* ─── Status badges ──────────────────────────────────────────────────────── */
+.badge-active   { background: #dcfce7; color: #15803d; }
+.badge-paused   { background: #f1f5f9; color: #475569; }
+.badge-pending  { background: #fef9c3; color: #92400e; }
+.badge-paid     { background: #dcfce7; color: #15803d; }
+.badge-draft    { background: #f1f5f9; color: #64748b; }
+.badge-approved { background: #dbeafe; color: #1d4ed8; }
+.badge-rejected { background: #fee2e2; color: #b91c1c; }
+.badge-open     { background: #ede9fe; color: #6d28d9; }
+.badge-approval { background: #fef3c7; color: #92400e; }
