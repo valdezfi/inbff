@@ -173,18 +173,20 @@ async function updateUserStripeAccount(userId: string, stripeAccountId: string):
 }
 
 // ─── Stores ───────────────────────────────────────────────────────────────────
+const STORE_COLS = `id, user_id AS "userId", shop_domain AS "shopDomain", access_token AS "accessToken", webhook_secret AS "webhookSecret", connected_at::text AS "connectedAt"`;
+
 async function findStoresByUserId(userId: string): Promise<ShopifyStore[]> {
   if (!usePostgres) return getJson().read().stores.filter(s => s.userId === userId);
-  return getSql()<ShopifyStore[]>`SELECT id,user_id AS "userId",shop_domain AS "shopDomain",access_token AS "accessToken",connected_at::text AS "connectedAt" FROM shopify_stores WHERE user_id=${userId}`;
+  return getSql()<ShopifyStore[]>`SELECT ${getSql().unsafe(STORE_COLS)} FROM shopify_stores WHERE user_id=${userId}`;
 }
 async function findStoreByDomain(shopDomain: string): Promise<ShopifyStore | null> {
   if (!usePostgres) return getJson().read().stores.find(s => s.shopDomain === shopDomain) ?? null;
-  const r = await getSql()<ShopifyStore[]>`SELECT id,user_id AS "userId",shop_domain AS "shopDomain",access_token AS "accessToken",connected_at::text AS "connectedAt" FROM shopify_stores WHERE shop_domain=${shopDomain} LIMIT 1`;
+  const r = await getSql()<ShopifyStore[]>`SELECT ${getSql().unsafe(STORE_COLS)} FROM shopify_stores WHERE shop_domain=${shopDomain} LIMIT 1`;
   return r[0] ?? null;
 }
 async function findStoreById(id: string): Promise<ShopifyStore | null> {
   if (!usePostgres) return getJson().read().stores.find(s => s.id === id) ?? null;
-  const r = await getSql()<ShopifyStore[]>`SELECT id,user_id AS "userId",shop_domain AS "shopDomain",access_token AS "accessToken",connected_at::text AS "connectedAt" FROM shopify_stores WHERE id=${id} LIMIT 1`;
+  const r = await getSql()<ShopifyStore[]>`SELECT ${getSql().unsafe(STORE_COLS)} FROM shopify_stores WHERE id=${id} LIMIT 1`;
   return r[0] ?? null;
 }
 async function upsertStore(store: Omit<ShopifyStore, "connectedAt">): Promise<ShopifyStore> {
@@ -192,15 +194,25 @@ async function upsertStore(store: Omit<ShopifyStore, "connectedAt">): Promise<Sh
     let result!: ShopifyStore;
     await getJson().tx(db => {
       const ex = db.stores.find(s => s.userId === store.userId && s.shopDomain === store.shopDomain);
-      if (ex) { ex.accessToken = store.accessToken; result = ex; }
-      else { const n: ShopifyStore = { ...store, connectedAt: new Date().toISOString() }; db.stores.push(n); result = n; }
+      if (ex) {
+        ex.accessToken = store.accessToken;
+        if (store.webhookSecret) ex.webhookSecret = store.webhookSecret;
+        result = ex;
+      } else {
+        const n: ShopifyStore = { ...store, webhookSecret: store.webhookSecret ?? null, connectedAt: new Date().toISOString() };
+        db.stores.push(n);
+        result = n;
+      }
     });
     return result;
   }
   const r = await getSql()<ShopifyStore[]>`
-    INSERT INTO shopify_stores (id,user_id,shop_domain,access_token) VALUES (${store.id},${store.userId},${store.shopDomain},${store.accessToken})
-    ON CONFLICT (user_id,shop_domain) DO UPDATE SET access_token=EXCLUDED.access_token
-    RETURNING id,user_id AS "userId",shop_domain AS "shopDomain",access_token AS "accessToken",connected_at::text AS "connectedAt"`;
+    INSERT INTO shopify_stores (id, user_id, shop_domain, access_token, webhook_secret)
+    VALUES (${store.id}, ${store.userId}, ${store.shopDomain}, ${store.accessToken}, ${store.webhookSecret ?? null})
+    ON CONFLICT (user_id, shop_domain) DO UPDATE
+      SET access_token    = EXCLUDED.access_token,
+          webhook_secret  = COALESCE(EXCLUDED.webhook_secret, shopify_stores.webhook_secret)
+    RETURNING ${getSql().unsafe(STORE_COLS)}`;
   return r[0];
 }
 
@@ -266,7 +278,7 @@ async function findActivePrograms(opts: { category?: string; minRate?: number; t
     if (category) list = list.filter(p => p.category === category);
     if (minRate)  list = list.filter(p => p.commissionRate >= minRate);
     if (type)     list = list.filter(p => p.programType === type);
-    if (search)   list = list.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+    if (search)   list = list.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || (p.description ?? "").toLowerCase().includes(search.toLowerCase()));
     if (sort === "commission") list.sort((a, b) => b.commissionRate - a.commissionRate);
     else list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     const total = list.length;
@@ -281,19 +293,30 @@ async function findActivePrograms(opts: { category?: string; minRate?: number; t
     }));
     return { programs, total };
   }
+  // ── Fully parameterized Postgres query (no SQL injection risk) ──────────────
   const sql = getSql();
-  // Build dynamic query
-  let whereClause = `ap.status = 'active'`;
-  if (category) whereClause += ` AND ap.category = '${category.replace(/'/g, "''")}'`;
-  if (minRate)  whereClause += ` AND ap.commission_rate >= ${minRate}`;
-  if (type)     whereClause += ` AND ap.program_type = '${type.replace(/'/g, "''")}'`;
-  if (search)   whereClause += ` AND (lower(ap.name) LIKE '%${search.toLowerCase().replace(/'/g, "''")}%')`;
-  const orderClause = sort === "commission" ? "ap.commission_rate DESC" : sort === "affiliates" ? "aff_count DESC" : "ap.created_at DESC";
+  const conditions: string[] = [`ap.status = 'active'`];
+  const values: (string | number)[] = [];
+  let idx = 1;
+  if (category) { conditions.push(`ap.category = $${idx++}`);          values.push(category); }
+  if (minRate)  { conditions.push(`ap.commission_rate >= $${idx++}`);   values.push(minRate); }
+  if (type)     { conditions.push(`ap.program_type = $${idx++}`);       values.push(type); }
+  if (search)   { conditions.push(`(lower(ap.name) LIKE $${idx} OR lower(ap.description) LIKE $${idx})`); values.push(`%${search.toLowerCase()}%`); idx++; }
+
+  const whereClause = conditions.join(" AND ");
+  const orderClause = sort === "commission"
+    ? "ap.commission_rate DESC"
+    : sort === "affiliates" ? "aff_count DESC"
+    : "ap.created_at DESC";
+
   const rows = await sql.unsafe(`
-    SELECT ap.id, ap.name, ap.description, ap.category, ap.banner_url AS "bannerUrl",
-           ap.commission_rate::float AS "commissionRate", ap.program_type AS "programType",
+    SELECT ap.id, ap.name, ap.description, ap.category,
+           ap.banner_url AS "bannerUrl",
+           ap.commission_rate::float AS "commissionRate",
+           ap.program_type AS "programType",
            ap.attribution_window_days AS "attributionWindowDays",
-           ss.shop_domain AS "shopDomain", ap.created_at::text AS "createdAt",
+           ss.shop_domain AS "shopDomain",
+           ap.created_at::text AS "createdAt",
            COUNT(af.id)::int AS "affiliateCount"
     FROM affiliate_programs ap
     JOIN shopify_stores ss ON ss.id = ap.store_id
@@ -301,9 +324,16 @@ async function findActivePrograms(opts: { category?: string; minRate?: number; t
     WHERE ${whereClause}
     GROUP BY ap.id, ss.shop_domain
     ORDER BY ${orderClause}
-    LIMIT ${limit} OFFSET ${offset}`) as MarketplaceProgram[];
-  const countRow = await sql.unsafe(`SELECT COUNT(*)::int AS c FROM affiliate_programs ap WHERE ${whereClause}`) as { c: number }[];
-  return { programs: rows, total: countRow[0]?.c ?? 0 };
+    LIMIT $${idx} OFFSET $${idx + 1}`,
+    [...values, limit, offset]
+  ) as MarketplaceProgram[];
+
+  const countRows = await sql.unsafe(
+    `SELECT COUNT(*)::int AS c FROM affiliate_programs ap WHERE ${whereClause}`,
+    values
+  ) as { c: number }[];
+
+  return { programs: rows, total: countRows[0]?.c ?? 0 };
 }
 async function createProgram(program: Omit<AffiliateProgram, "createdAt">): Promise<AffiliateProgram> {
   if (!usePostgres) {

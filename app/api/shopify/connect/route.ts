@@ -1,17 +1,18 @@
 /**
- * Step 1 of Shopify OAuth.
- *
  * POST /api/shopify/connect
- * Body: { shopDomain: "my-store" }   (just the store name, not the full domain)
  *
- * Redirects the merchant to Shopify's authorization screen.
- * After the merchant approves, Shopify calls /api/shopify/callback with a
- * temporary code that we exchange for a permanent access token.
+ * Step 1 of multi-brand Shopify OAuth.
+ * Any brand (creator user) can connect their own Shopify store.
  *
- * Required env vars:
- *   SHOPIFY_API_KEY        — from Shopify Partners → App setup
- *   SHOPIFY_REDIRECT_URI   — must match the URI registered in the app
- *   SHOPIFY_SCOPES         — comma-separated list of scopes, e.g. "read_orders"
+ * Two modes:
+ *  1. Native OAuth  — SHOPIFY_API_KEY + SHOPIFY_API_SECRET are set in env
+ *  2. Demo / dev    — env vars absent → store saved directly with accessToken=null
+ *
+ * Body: { shopDomain: "my-store" }  (just the subdomain, no .myshopify.com)
+ *
+ * Response:
+ *  { redirectUrl: "https://..." }  → client should navigate to this URL (Shopify OAuth)
+ *  { store: {...}, redirectUrl: null } → dev mode, store created directly
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
@@ -20,8 +21,8 @@ import { z } from "zod";
 const schema = z.object({
   shopDomain: z
     .string()
-    .min(3, "Enter a valid store name.")
-    .regex(/^[a-zA-Z0-9-]+$/, "Use just the store name, e.g. 'my-shop'"),
+    .min(2, "Enter a valid store name.")
+    .regex(/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$/, "Use just the store name, e.g. my-shop"),
 });
 
 export async function POST(req: NextRequest) {
@@ -38,29 +39,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
-  const shopDomain = `${parsed.data.shopDomain}.myshopify.com`;
-  const apiKey = process.env.SHOPIFY_API_KEY;
+  const shopDomain = `${parsed.data.shopDomain.toLowerCase()}.myshopify.com`;
+  const apiKey     = process.env.SHOPIFY_API_KEY;
   const redirectUri = process.env.SHOPIFY_REDIRECT_URI;
-  const scopes = process.env.SHOPIFY_SCOPES ?? "read_orders";
+  const scopes     = process.env.SHOPIFY_SCOPES ?? "read_orders,write_script_tags";
 
+  // ── Dev / demo mode: no Shopify app credentials ───────────────────────────
   if (!apiKey || !redirectUri) {
-    // No Shopify app configured — demo/dev mode: save the store directly
-    // and skip OAuth so the rest of the flow can be demonstrated.
     const { nanoid } = await import("nanoid");
-    const { db } = await import("@/lib/db");
+    const { db }     = await import("@/lib/db");
     const store = await db.upsertStore({
-      id: nanoid(),
-      userId: session.userId,
+      id:            nanoid(),
+      userId:        session.userId,
       shopDomain,
-      accessToken: null,
+      accessToken:   null,
+      webhookSecret: null,
     });
     return NextResponse.json({ store, redirectUrl: null });
   }
 
-  // Generate a random nonce to prevent CSRF during the OAuth callback.
-  // We embed the userId and shop in the state so the callback can identify
-  // the user without a separate session lookup.
-  const nonce = Math.random().toString(36).slice(2);
+  // ── Production: build Shopify OAuth URL ───────────────────────────────────
+  // Embed userId + shopDomain in a signed state param to survive the round-trip
+  const nonce = crypto.getRandomValues(new Uint32Array(2)).join("");
   const state = Buffer.from(
     JSON.stringify({ nonce, userId: session.userId, shopDomain })
   ).toString("base64url");

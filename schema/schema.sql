@@ -18,13 +18,17 @@ create table if not exists users (
 
 -- ─── Shopify stores ───────────────────────────────────────────────────────────
 create table if not exists shopify_stores (
-  id           text        primary key,
-  user_id      text        not null references users(id) on delete cascade,
-  shop_domain  text        not null,
-  access_token text,
-  connected_at timestamptz not null default now(),
+  id             text        primary key,
+  user_id        text        not null references users(id) on delete cascade,
+  shop_domain    text        not null,
+  access_token   text,
+  webhook_secret text,                           -- per-store webhook signing secret
+  connected_at   timestamptz not null default now(),
   unique (user_id, shop_domain)
 );
+
+-- Add webhook_secret if upgrading from an older schema
+alter table shopify_stores add column if not exists webhook_secret text;
 
 -- ─── Shopify product cache ────────────────────────────────────────────────────
 create table if not exists shopify_products (

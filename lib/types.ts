@@ -28,6 +28,7 @@ export interface ShopifyStore {
   userId: string;
   shopDomain: string;
   accessToken: string | null;
+  webhookSecret: string | null;   // per-store webhook signing secret (from Shopify callback)
   connectedAt: string;
 }
 
