@@ -7,6 +7,26 @@ import { z } from "zod";
 
 const codeAlphabet = customAlphabet("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", 7);
 
+/** Collision-safe unique referral code — retries on duplicate. */
+async function generateUniqueCode(): Promise<string> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = codeAlphabet();
+    const exists = await db.findAffiliateByCode(code);
+    if (!exists) return code;
+  }
+  return nanoid(10).toUpperCase().replace(/[^A-Z0-9]/g, "X").slice(0, 10);
+}
+
+/** Minimal HTML escaping to prevent XSS in email templates. */
+function esc(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const schema = z.object({
   programId: z.string().min(1),
   pitch:     z.string().max(200).optional().nullable(),
@@ -48,16 +68,16 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Open program → instant join
+  // Open program → instant join with collision-safe code
   if (program.programType === "open") {
     const affiliate = await db.createAffiliate({
-      id: nanoid(),
+      id:           nanoid(),
       programId,
-      userId: session.userId,
-      name: user.name,
-      email: user.email,
-      referralCode: codeAlphabet(),
-      status: "active",
+      userId:       session.userId,
+      name:         user.name,
+      email:        user.email,
+      referralCode: await generateUniqueCode(),
+      status:       "active",
     });
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     const referralUrl = `${appUrl}/r/${affiliate.referralCode}`;
@@ -78,15 +98,22 @@ export async function POST(req: NextRequest) {
     pitch: pitch ?? null,
   });
 
-  // Notify program owner
+  // Notify program owner (XSS-safe — all user content is HTML-escaped)
   const owner = await db.findUserById(program.userId);
   if (owner) {
+    const reviewUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/dashboard/programs/${programId}`;
     await sendEmail({
-      to: owner.email,
+      to:      owner.email,
       subject: `New application to ${program.name}`,
-      html: `<p>Hi ${owner.name},</p><p><strong>${user.name}</strong> (${user.email}) has applied to join <strong>${program.name}</strong>.</p>${pitch ? `<p>Pitch: "${pitch}"</p>` : ""}<p><a href="${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/dashboard/programs/${programId}">Review application →</a></p>`,
-      text: `${user.name} applied to ${program.name}.\n${pitch ? `Pitch: ${pitch}\n` : ""}Review: ${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/dashboard/programs/${programId}`,
-    }).catch(console.error);
+      html: `
+        <p>Hi ${esc(owner.name)},</p>
+        <p><strong>${esc(user.name)}</strong> (${esc(user.email)}) has applied to join
+        <strong>${esc(program.name)}</strong>.</p>
+        ${pitch ? `<p>Their pitch: &ldquo;${esc(pitch)}&rdquo;</p>` : ""}
+        <p><a href="${reviewUrl}">Review application →</a></p>
+      `,
+      text: `${user.name} applied to ${program.name}.\n${pitch ? `Pitch: ${pitch}\n` : ""}Review: ${reviewUrl}`,
+    }).catch(err => console.error("[applications] notify email failed:", err));
   }
 
   return NextResponse.json({ status: "pending", applicationId: application.id }, { status: 201 });
