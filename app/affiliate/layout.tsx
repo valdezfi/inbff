@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import AffiliatShell from "./AffiliateShell";
+import AffiliateShell from "./AffiliateShell";
 
+// Route protection is handled by middleware.ts
 export default async function AffiliateLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
   if (!session) redirect("/login");
@@ -11,8 +12,8 @@ export default async function AffiliateLayout({ children }: { children: React.Re
   if (!user) redirect("/login");
 
   return (
-    <AffiliatShell userName={user.name} userEmail={user.email} role={user.role}>
+    <AffiliateShell userName={user.name} userEmail={user.email} role={user.role}>
       {children}
-    </AffiliatShell>
+    </AffiliateShell>
   );
 }

@@ -23,6 +23,12 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
+  // Only brand accounts can create programs
+  const user = await db.findUserById(session.userId);
+  if (!user || user.role !== "brand") {
+    return NextResponse.json({ error: "Only brand accounts can create affiliate programs." }, { status: 403 });
+  }
+
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body." }, { status: 400 });
 

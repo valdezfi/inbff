@@ -29,6 +29,14 @@ export async function POST(req: NextRequest) {
   const user = await db.findUserById(session.userId);
   if (!user) return NextResponse.json({ error: "User not found." }, { status: 404 });
 
+  // Brands cannot join programs as affiliates
+  if (user.role === "brand") {
+    return NextResponse.json(
+      { error: "Brand accounts cannot join affiliate programs. Use a creator account." },
+      { status: 403 }
+    );
+  }
+
   // Check if already a member
   const existingAffiliate = await db.findAffiliateByProgramAndEmail(programId, user.email);
   if (existingAffiliate) {

@@ -1,6 +1,15 @@
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-export type UserRole = "creator" | "affiliate" | "both";
+/**
+ * "brand"   — A business/company that connects their Shopify store and creates
+ *             affiliate programs. Previously called "creator" in older code.
+ *             Routes to /dashboard
+ *
+ * "creator" — A content creator / affiliate who browses the marketplace,
+ *             joins programs and earns commissions via referral links.
+ *             Routes to /affiliate/dashboard
+ */
+export type UserRole = "brand" | "creator";
 export type ProgramType = "open" | "approval";
 export type ProgramStatus = "draft" | "active" | "paused" | "deleted";
 export type PayoutSchedule = "manual" | "weekly" | "monthly";

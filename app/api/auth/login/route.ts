@@ -3,7 +3,10 @@ import { db } from "@/lib/db";
 import { verifyPassword, createSession } from "@/lib/auth";
 import { z } from "zod";
 
-const schema = z.object({ email: z.string().email(), password: z.string().min(1) });
+const schema = z.object({
+  email:    z.string().email(),
+  password: z.string().min(1),
+});
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -27,8 +30,14 @@ export async function POST(req: NextRequest) {
   }
 
   await createSession(user.id, user.role);
+
+  // brand → brand dashboard, creator → affiliate/marketplace
+  const redirectTo = user.role === "brand"
+    ? "/dashboard"
+    : "/affiliate/dashboard";
+
   return NextResponse.json({
     id: user.id, email: user.email, name: user.name, role: user.role,
-    redirectTo: user.role === "affiliate" ? "/affiliate/dashboard" : "/dashboard",
+    redirectTo,
   });
 }

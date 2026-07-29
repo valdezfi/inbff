@@ -102,7 +102,7 @@ export default function DashboardShell({
         <div>
           <span className="font-bold text-white tracking-tight text-base">inBFF</span>
           <span className="ml-1.5 rounded-full bg-indigo-400/20 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-200 uppercase tracking-wider">
-            Creator
+            Brand
           </span>
         </div>
         {mobile && (
@@ -143,14 +143,6 @@ export default function DashboardShell({
           >
             <Store className="h-4 w-4 text-white/50" />
             Marketplace
-          </Link>
-          <Link
-            href="/affiliate/dashboard"
-            onClick={() => setSidebarOpen(false)}
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/60 hover:bg-white/8 hover:text-white/90 transition-all"
-          >
-            <LayoutDashboard className="h-4 w-4 text-white/50" />
-            Switch to Affiliate
           </Link>
         </div>
       </nav>

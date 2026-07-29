@@ -31,6 +31,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
+  // Only brand accounts can connect Shopify stores
+  const { db } = await import("@/lib/db");
+  const user = await db.findUserById(session.userId);
+  if (!user || user.role !== "brand") {
+    return NextResponse.json({ error: "Only brand accounts can connect Shopify stores." }, { status: 403 });
+  }
+
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
 

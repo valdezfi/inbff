@@ -45,7 +45,7 @@ export default function JoinProgramButton({
 
   if (!isLoggedIn) {
     return (
-      <Link href={`/signup?role=affiliate&next=/marketplace/${programId}`}
+      <Link href={`/signup?role=creator&next=/marketplace/${programId}`}
         className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 px-5 py-3 text-sm font-semibold text-white hover:brightness-110 transition-all">
         {programType === "open" ? "Join & get your link" : "Apply to this program"}
         <ArrowRight className="h-4 w-4" />

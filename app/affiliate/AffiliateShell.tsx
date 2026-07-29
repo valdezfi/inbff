@@ -78,7 +78,7 @@ export default function AffiliateShell({
         <div>
           <span className="font-bold text-white tracking-tight text-base">inBFF</span>
           <span className="ml-1.5 rounded-full bg-blue-400/20 px-1.5 py-0.5 text-[9px] font-semibold text-blue-200 uppercase tracking-wider">
-            Affiliate
+            Creator
           </span>
         </div>
         {mobile && (

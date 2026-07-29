@@ -3,6 +3,8 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import DashboardShell from "./DashboardShell";
 
+// Route protection is handled by middleware.ts
+// This layout just loads the user for the shell.
 export default async function DashboardLayout({
   children,
 }: {

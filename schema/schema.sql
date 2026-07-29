@@ -8,13 +8,17 @@ create table if not exists users (
   password_hash             text        not null,
   name                      text        not null,
   created_at                timestamptz not null default now(),
-  role                      text        not null default 'creator'
-                              check (role in ('creator','affiliate','both')),
+  role                      text        not null default 'brand'
+                              check (role in ('brand','creator')),
   email_verified            boolean     not null default false,
   verification_token        text        unique,
   verification_token_expiry timestamptz,
   stripe_account_id         text        -- affiliate Stripe Connect account
 );
+
+-- Migrate old role values if upgrading from previous schema
+update users set role = 'brand'   where role in ('creator','both');
+update users set role = 'creator' where role = 'affiliate';
 
 -- ─── Shopify stores ───────────────────────────────────────────────────────────
 create table if not exists shopify_stores (

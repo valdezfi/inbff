@@ -5,11 +5,22 @@ import { hashPassword, createSession } from "@/lib/auth";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 
+/**
+ * POST /api/auth/signup
+ *
+ * Roles:
+ *   "brand"   — Business/company that creates affiliate programs (dashboard)
+ *   "creator" — Content creator/affiliate that earns commissions (affiliate dashboard)
+ *
+ * Email verification:
+ *   Production (MAILGUN_API_KEY set) → sends verification email, no auto-login
+ *   Dev (no MAILGUN_API_KEY)         → auto-verifies and logs in immediately
+ */
 const schema = z.object({
-  email: z.string().email("Enter a valid email address."),
+  email:    z.string().email("Enter a valid email address."),
   password: z.string().min(8, "Password must be at least 8 characters."),
-  name: z.string().min(1, "Name is required.").max(100),
-  role: z.enum(["creator", "affiliate"]).default("creator"),
+  name:     z.string().min(1, "Name is required.").max(100),
+  role:     z.enum(["brand", "creator"]).default("creator"),
 });
 
 export async function POST(req: NextRequest) {
@@ -24,15 +35,18 @@ export async function POST(req: NextRequest) {
 
   const existing = await db.findUserByEmail(email);
   if (existing) {
-    return NextResponse.json({ error: "An account with this email already exists." }, { status: 409 });
+    return NextResponse.json(
+      { error: "An account with this email already exists." },
+      { status: 409 }
+    );
   }
 
   const passwordHash = await hashPassword(password);
-  const hasMailgun = !!process.env.MAILGUN_API_KEY;
+  const hasMailgun   = !!process.env.MAILGUN_API_KEY;
 
-  // In dev (no Mailgun), skip email verification entirely
-  const emailVerified = !hasMailgun;
-  const verificationToken = hasMailgun ? randomBytes(32).toString("hex") : null;
+  // In dev (no Mailgun): skip verification, auto-login
+  const emailVerified          = !hasMailgun;
+  const verificationToken      = hasMailgun ? randomBytes(32).toString("hex") : null;
   const verificationTokenExpiry = hasMailgun
     ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     : null;
@@ -51,7 +65,7 @@ export async function POST(req: NextRequest) {
 
   if (hasMailgun && verificationToken) {
     const { sendEmail, verificationEmailHtml, verificationEmailText } = await import("@/lib/email");
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const appUrl    = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     const verifyUrl = `${appUrl}/verify-email?token=${verificationToken}`;
     await sendEmail({
       to: email,
@@ -65,10 +79,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Dev: auto-login
+  // Dev: auto-login and redirect by role
   await createSession(user.id, user.role);
   return NextResponse.json({
     id: user.id, email: user.email, name: user.name, role: user.role,
-    redirectTo: role === "affiliate" ? "/affiliate/dashboard" : "/dashboard",
+    redirectTo: role === "brand" ? "/dashboard/connect-shopify" : "/marketplace",
   });
 }
