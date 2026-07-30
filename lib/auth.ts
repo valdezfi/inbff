@@ -2,23 +2,26 @@ import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 
-// ── Production guard ──────────────────────────────────────────────────────────
-// AUTH_SECRET must be set in production — a missing secret makes JWTs forgeable.
-if (process.env.NODE_ENV === "production" && !process.env.AUTH_SECRET) {
-  throw new Error(
-    "[inBFF] AUTH_SECRET environment variable is not set. " +
-    "Run: openssl rand -hex 32  and set it in your .env.local or server environment."
-  );
-}
-
-const SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET ?? "dev-only-insecure-secret-change-me"
-);
-
 const COOKIE_NAME = "session";
 
-// Session lifetime: 24h (was 30d — shorter = safer, roles can't be stale long)
-const SESSION_MAX_AGE = 60 * 60 * 24; // 24 hours in seconds
+// Session lifetime: 24h
+const SESSION_MAX_AGE = 60 * 60 * 24;
+
+function getSecret(): Uint8Array {
+  const secret = process.env.AUTH_SECRET;
+  // Guard runs at request time (not build time) so env vars are available
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "[inBFF] AUTH_SECRET environment variable is not set. " +
+        "Run: openssl rand -hex 32  and add it to your server environment."
+      );
+    }
+    // Dev fallback — safe only for local development
+    return new TextEncoder().encode("dev-only-insecure-secret-change-me");
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 10);
@@ -33,7 +36,7 @@ export async function createSession(userId: string, role: string = "brand") {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_MAX_AGE}s`)
-    .sign(SECRET);
+    .sign(getSecret());
 
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
@@ -55,13 +58,12 @@ export async function getSession(): Promise<{ userId: string; role: string } | n
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, SECRET);
+    const { payload } = await jwtVerify(token, getSecret());
     return {
       userId: payload.userId as string,
       role:   (payload.role as string) ?? "brand",
     };
   } catch {
-    // Token expired or invalid — treat as unauthenticated
     return null;
   }
 }

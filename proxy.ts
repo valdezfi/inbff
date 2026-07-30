@@ -10,15 +10,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET ?? "dev-only-insecure-secret-change-me"
-);
+// Secret is read at request time — safe for edge runtime during build
+function getSecret(): Uint8Array {
+  return new TextEncoder().encode(
+    process.env.AUTH_SECRET ?? "dev-only-insecure-secret-change-me"
+  );
+}
 
 async function getRoleFromRequest(req: NextRequest): Promise<string | null> {
   const token = req.cookies.get("session")?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, SECRET);
+    const { payload } = await jwtVerify(token, getSecret());
     return (payload.role as string) ?? null;
   } catch {
     return null;

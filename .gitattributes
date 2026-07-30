@@ -1,0 +1,16 @@
+# Force LF line endings for all text files on all platforms
+# This ensures the code deploys correctly on Linux servers
+* text=auto eol=lf
+
+# Explicitly mark binary files
+*.ico  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.svg  binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary
+*.eot  binary
+*.otf  binary

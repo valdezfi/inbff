@@ -57,3 +57,6 @@ nul.txt
 *.swo
 *~
 .cache/
+affiliate-platform/
+shopfy/
+.vscode/
