@@ -41,7 +41,7 @@ export async function syncProducts(store: ShopifyStore): Promise<number> {
   let total = 0;
 
   while (url) {
-    const res = await fetch(url, {
+    const res: Response = await fetch(url, {
       headers: { "X-Shopify-Access-Token": store.accessToken },
     });
 
@@ -68,8 +68,8 @@ export async function syncProducts(store: ShopifyStore): Promise<number> {
     total += products.length;
 
     // Follow Shopify Link-header pagination
-    const link = res.headers.get("Link");
-    const next = link?.match(/<([^>]+)>;\s*rel="next"/)?.[1] ?? null;
+    const link: string | null = res.headers.get("Link");
+    const next: string | null = link?.match(/<([^>]+)>;\s*rel="next"/)?.[1] ?? null;
     url = next;
   }
 

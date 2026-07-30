@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   await db.verifyUserEmail(user.id);
   await createSession(user.id, user.role);
 
-  // Redirect depends on role
-  const redirectTo = user.role === "affiliate" ? "/marketplace" : "/dashboard/connect-shopify";
+  // Redirect by role: brand → connect store, creator → browse marketplace
+  const redirectTo = user.role === "creator" ? "/marketplace" : "/dashboard/connect-shopify";
   return NextResponse.json({ ok: true, redirectTo });
 }

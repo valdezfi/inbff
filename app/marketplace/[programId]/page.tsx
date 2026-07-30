@@ -129,7 +129,7 @@ export default async function ProgramDetailPage({ params }: Ctx) {
 
               {!session && (
                 <p className="text-center text-xs text-white/30 mt-3">
-                  <Link href="/signup?role=affiliate" className="text-[#3B82F6] hover:text-blue-300">Create a free account</Link> to join
+                  <Link href="/signup?role=creator" className="text-[#3B82F6] hover:text-blue-300">Create a free account</Link> to join
                 </p>
               )}
             </div>
