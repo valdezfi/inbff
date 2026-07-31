@@ -1,0 +1,50 @@
+# ─── Node ─────────────────────────────────────────────────────────────────────
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.pnp
+.pnp.*
+
+# ─── Next.js build output ────────────────────────────────────────────────────
+.next
+out
+build
+dist
+
+# ─── Git ──────────────────────────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+
+# ─── Env / secrets (never copy into image — injected at runtime) ─────────────
+.env
+.env.*
+!.env.example
+
+# ─── Local dev database (JSON fallback) ──────────────────────────────────────
+data
+*.tsbuildinfo
+next-env.d.ts
+
+# ─── Nested / stale duplicate folder (gitignored) ────────────────────────────
+affiliate-platform
+
+# ─── Editor / OS ─────────────────────────────────────────────────────────────
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+nul
+nul.txt
+
+# ─── Logs / temp ─────────────────────────────────────────────────────────────
+*.log
+tmp
+temp
+

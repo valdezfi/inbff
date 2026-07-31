@@ -1,0 +1,20 @@
+# nixpacks.toml — used by Coolify / Dokploy / Render / Nixpacks-based platforms.
+# Explicitly force the `npm` provider so the build NEVER auto-detects yarn.
+# The repo is npm-only (no yarn.lock), but this removes any ambiguity.
+
+[providers]
+# Force nixpacks to use npm instead of any auto-detection
+npm = true
+
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm start"
+
