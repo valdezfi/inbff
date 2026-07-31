@@ -55,7 +55,7 @@ export default async function AffiliateDashboard() {
           <Plus className="h-4 w-4" />
           Browse marketplace
         </Link>
-        <div className="mt-12 grid grid-cols-3 gap-4 w-full max-w-md">
+        <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-md">
           {[
             { n: "Instant",  label: "referral links" },
             { n: "Real-time",label: "click tracking" },

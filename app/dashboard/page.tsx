@@ -64,7 +64,7 @@ export default async function DashboardOverview() {
           <Plus className="h-4 w-4" />
           Connect a store
         </Link>
-        <div className="mt-12 grid grid-cols-3 gap-4 w-full max-w-md">
+        <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-md">
           {[
             { n: "2 min",  label: "avg setup time" },
             { n: "100%",   label: "automated tracking" },

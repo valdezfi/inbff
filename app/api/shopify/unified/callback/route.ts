@@ -18,6 +18,15 @@ import { getSession } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
+
+  // ── Handle error from Unified.to (e.g. integration not enabled) ──
+  // Unified.to may redirect with ?error=... when Shopify integration is not enabled
+  if (searchParams.has("error") || searchParams.has("error_description")) {
+    return NextResponse.redirect(
+      new URL("/dashboard/connect-shopify?error=unified-integration-disabled", req.url)
+    );
+  }
+
   const connectionId = searchParams.get("id") ?? "";
   const state        = searchParams.get("state") ?? "";
 

@@ -13,6 +13,7 @@ const errorMessages: Record<string, string> = {
   "token-exchange-failed": "Could not get an access token from Shopify. Please retry.",
   "not-configured":        "Shopify app is not configured on this server.",
   "no-connection-id":      "Connection failed — Unified.to did not return an ID. Please retry.",
+  "unified-integration-disabled": "Shopify integration is not enabled in your Unified.to workspace. Please enable it in your Unified.to dashboard and try again.",
 };
 
 function ConnectShopifyInner() {
@@ -116,7 +117,7 @@ function ConnectShopifyInner() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
           {[
             { icon: ShieldCheck, text: "Secure OAuth — we never see your password" },
             { icon: Package,     text: "Products synced automatically" },
@@ -184,7 +185,7 @@ function ConnectShopifyInner() {
       {/* ── How it works after connect ────────────────────────────────────── */}
       <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white p-6 card-shadow">
         <h3 className="text-sm font-bold text-slate-800 mb-4">What happens after connecting?</h3>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { n: "1", title: "Products synced",   desc: "Your Shopify catalog is imported so affiliates can see what they're promoting" },
             { n: "2", title: "Create a program",  desc: "Set your commission rate, pick eligible products, and publish to the marketplace" },
