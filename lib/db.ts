@@ -747,7 +747,7 @@ export async function markCommissionsPaid(ids: string[], stripeTransferId: strin
 }
 
 // ─── Convenience re-export (keeps any existing `import * as db` usage working) ─
-export default {
+const _db = {
   read, transaction,
   findUserByEmail, findUserById, findUserByVerificationToken,
   createUser, verifyUserEmail, updateVerificationToken, updateUserRole, updateUserStripeAccount,
@@ -762,3 +762,8 @@ export default {
   findCommissionsByProgramIds, findCommissionsByAffiliateId, findPendingCommissionsByAffiliateId,
   findCommissionById, createCommission, markCommissionPaid, markCommissionsPaid,
 };
+
+/** Named export — supports `import { db } from "@/lib/db"` */
+export const db = _db;
+
+export default _db;

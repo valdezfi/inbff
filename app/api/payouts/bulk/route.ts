@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!program || program.userId !== session.userId)
     return NextResponse.json({ error: "Program not found." }, { status: 404 });
 
-  const commissions = await db.findCommissionsByProgramId(program.id);
+  const commissions = await db.findCommissionsByProgramIds([program.id]);
   const pending = commissions.filter(c => c.status === "pending");
   if (pending.length === 0) return NextResponse.json({ paid: 0 });
 

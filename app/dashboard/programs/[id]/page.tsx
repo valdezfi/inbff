@@ -27,7 +27,7 @@ export default async function ProgramDetailPage({
     db.findStoresByUserId(session!.userId),
     db.findAffiliatesByProgramId(id),
     db.findOrdersByProgramId(id),
-    db.findCommissionsByProgramId(id),
+    db.findCommissionsByProgramIds([id]),
     db.findApplicationsByProgramId(id, "pending"),
     db.findProgramProductIds(id),
   ]);

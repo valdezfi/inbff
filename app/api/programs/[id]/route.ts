@@ -16,7 +16,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
   const [affiliates, orders, commissions, applications, products] = await Promise.all([
     db.findAffiliatesByProgramId(id),
     db.findOrdersByProgramId(id),
-    db.findCommissionsByProgramId(id),
+    db.findCommissionsByProgramIds([id]),
     db.findApplicationsByProgramId(id),
     db.findProgramProductIds(id),
   ]);

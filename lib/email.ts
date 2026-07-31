@@ -11,14 +11,25 @@
  * Mailgun credentials.
  */
 
-import Mailgun from "mailgun.js";
-import FormData from "form-data";
+import * as MailgunModule from "mailgun.js";
+import * as FormDataModule from "form-data";
+
+// Turbopack/ESM interop: the default export may live at .default or at the module root
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const MailgunCtor: new (f: unknown) => { client: (...args: unknown[]) => unknown } =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ((MailgunModule as any).default ?? MailgunModule) as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const FormDataCtor = ((FormDataModule as any).default ?? FormDataModule) as typeof FormDataModule.default;
 
 function getClient() {
   const apiKey = process.env.MAILGUN_API_KEY;
   if (!apiKey) return null;
-  const mg = new Mailgun(FormData);
-  return mg.client({ username: "api", key: apiKey });
+  const mg = new MailgunCtor(FormDataCtor);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (mg as any).client({ username: "api", key: apiKey }) as {
+    messages: { create: (domain: string, opts: Record<string, unknown>) => Promise<unknown> };
+  };
 }
 
 interface SendOptions {

@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   let commission = null;
   if (affiliate && program && order && isNewOrder) {
     // Check if a commission already exists for this order (idempotent)
-    const existingCommissions = await db.findCommissionsByProgramId(program.id);
+    const existingCommissions = await db.findCommissionsByProgramIds([program.id]);
     const alreadyCommissioned = existingCommissions.some(c => c.orderId === order.id);
 
     if (!alreadyCommissioned) {
@@ -70,8 +70,6 @@ export async function POST(req: NextRequest) {
         amount: commissionAmount,
         rate: program.commissionRate,
         status: "pending",
-        paidAt: null,
-        stripeTransferId: null,
       });
     }
   }

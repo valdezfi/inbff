@@ -134,15 +134,13 @@ export async function POST(req: NextRequest) {
     const commissionAmount =
       Math.round(amount * (program.commissionRate / 100) * 100) / 100;
     commission = await db.createCommission({
-      id:               nanoid(),
-      orderId:          order.id,
-      affiliateId:      affiliate.id,
-      programId:        program.id,
-      amount:           commissionAmount,
-      rate:             program.commissionRate,
-      status:           "pending",
-      paidAt:           null,
-      stripeTransferId: null,
+      id:          nanoid(),
+      orderId:     order.id,
+      affiliateId: affiliate.id,
+      programId:   program.id,
+      amount:      commissionAmount,
+      rate:        program.commissionRate,
+      status:      "pending",
     });
     console.log(
       `[webhook] commission $${commissionAmount} for affiliate ${affiliate.id} ` +
