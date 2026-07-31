@@ -17,8 +17,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  const workspaceId = process.env.NEXT_PUBLIC_UNIFIED_WORKSPACE_ID;
-  const appUrl      = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const workspaceId = process.env.NEXT_PUBLIC_UNIFIED_WORKSPACE_ID || process.env.UNIFIED_WORKSPACE_ID;
+  const appUrl      = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || req.nextUrl.origin || "http://localhost:3000";
 
   if (!workspaceId) {
     return NextResponse.json(

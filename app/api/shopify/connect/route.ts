@@ -53,6 +53,9 @@ export async function POST(req: NextRequest) {
 
   // ── Dev / demo mode: no Shopify app credentials ───────────────────────────
   if (!apiKey || !redirectUri) {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "Shopify API credentials are not configured for direct connection." }, { status: 503 });
+    }
     const { nanoid } = await import("nanoid");
     const { db }     = await import("@/lib/db");
     const store = await db.upsertStore({
