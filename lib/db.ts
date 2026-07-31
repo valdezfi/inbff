@@ -692,6 +692,18 @@ export async function findPendingCommissionsByAffiliateId(affiliateId: string): 
   return q<CommissionRow>(`SELECT ${COMMISSION_SELECT} FROM commissions WHERE affiliate_id=? AND status='pending' ORDER BY created_at DESC`, [affiliateId]) as unknown as Promise<Commission[]>;
 }
 
+export async function findPendingCommissionsByAffiliateAndProgram(affiliateId: string, programId: string): Promise<Commission[]> {
+  if (!useMySQL) {
+    return getJson().read().commissions.filter(
+      c => c.affiliateId === affiliateId && c.programId === programId && c.status === 'pending'
+    );
+  }
+  return q<CommissionRow>(
+    `SELECT ${COMMISSION_SELECT} FROM commissions WHERE affiliate_id=? AND program_id=? AND status='pending' ORDER BY created_at DESC`,
+    [affiliateId, programId]
+  ) as unknown as Promise<Commission[]>;
+}
+
 export async function findCommissionById(id: string): Promise<Commission | null> {
   if (!useMySQL) return getJson().read().commissions.find(c => c.id === id) ?? null;
   const rows = await q<CommissionRow>(`SELECT ${COMMISSION_SELECT} FROM commissions WHERE id=? LIMIT 1`, [id]);
@@ -760,6 +772,7 @@ const _db = {
   createClick, countClicksByAffiliateId, countClicksByProgramId, findLatestClickByCode,
   findOrdersByProgramId, createOrder,
   findCommissionsByProgramIds, findCommissionsByAffiliateId, findPendingCommissionsByAffiliateId,
+  findPendingCommissionsByAffiliateAndProgram,
   findCommissionById, createCommission, markCommissionPaid, markCommissionsPaid,
 };
 
