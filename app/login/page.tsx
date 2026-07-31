@@ -101,27 +101,7 @@ function LoginInner() {
             </button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="mt-6 rounded-xl bg-white/5 border border-white/10 p-4 space-y-3">
-            <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">Demo accounts</p>
-            <div className="space-y-2">
-              {[
-                { role: "Brand",   email: "creator@demo.com",   password: "demo1234", color: "text-indigo-300" },
-                { role: "Creator", email: "affiliate@demo.com", password: "demo1234", color: "text-purple-300" },
-              ].map(d => (
-                <button
-                  key={d.email}
-                  type="button"
-                  onClick={() => { setEmail(d.email); setPassword(d.password); }}
-                  className="w-full flex items-center justify-between rounded-lg bg-white/5 hover:bg-white/10 px-3 py-2 transition-colors text-left"
-                >
-                  <span className={`text-xs font-semibold ${d.color}`}>{d.role}</span>
-                  <span className="text-[11px] text-white/30 font-mono">{d.email}</span>
-                </button>
-              ))}
-            </div>
-            <p className="text-[10px] text-white/20">Click a row to autofill · password: demo1234</p>
-          </div>
+
         </div>
 
         <p className="text-center text-sm text-white/40 mt-6">

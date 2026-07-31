@@ -51,21 +51,11 @@ export async function POST(req: NextRequest) {
   const redirectUri = process.env.SHOPIFY_REDIRECT_URI;
   const scopes     = process.env.SHOPIFY_SCOPES ?? "read_orders,write_script_tags";
 
-  // ── Dev / demo mode: no Shopify app credentials ───────────────────────────
   if (!apiKey || !redirectUri) {
-    if (process.env.NODE_ENV === "production") {
-      return NextResponse.json({ error: "Shopify API credentials are not configured for direct connection." }, { status: 503 });
-    }
-    const { nanoid } = await import("nanoid");
-    const { db }     = await import("@/lib/db");
-    const store = await db.upsertStore({
-      id:            nanoid(),
-      userId:        session.userId,
-      shopDomain,
-      accessToken:   null,
-      webhookSecret: null,
-    });
-    return NextResponse.json({ store, redirectUrl: null });
+    return NextResponse.json(
+      { error: "Shopify API credentials are not configured for direct connection. Please use the Unified.to connection or configure the environment variables." },
+      { status: 503 }
+    );
   }
 
   // ── Production: build Shopify OAuth URL ───────────────────────────────────
