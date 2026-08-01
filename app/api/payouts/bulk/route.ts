@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { z } from "zod";
+import Stripe from "stripe";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -20,9 +21,9 @@ export async function POST(req: NextRequest) {
   if (pending.length === 0) return NextResponse.json({ paid: 0 });
 
   const stripeKey = process.env.STRIPE_SECRET_KEY;
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Stripe = stripeKey ? (require("stripe") as typeof import("stripe")) : null;
-  const stripe = Stripe && stripeKey ? new Stripe.default(stripeKey, { apiVersion: "2026-06-24.dahlia" }) : null;
+  const stripe = stripeKey
+    ? new Stripe(stripeKey, { apiVersion: "2026-06-24.dahlia" as Stripe.LatestApiVersion })
+    : null;
 
   // Fetch affiliates once (outside the loop) to avoid N+1 queries
   const affiliates = await db.findAffiliatesByProgramId(program.id);

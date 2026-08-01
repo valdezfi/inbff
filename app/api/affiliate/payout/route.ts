@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { z } from "zod";
+import Stripe from "stripe";
 
 const schema = z.object({ programId: z.string().min(1) });
 
@@ -35,9 +36,9 @@ export async function POST(req: NextRequest) {
   let stripeTransferId: string | null = null;
 
   if (process.env.STRIPE_SECRET_KEY && user.stripeAccountId) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Stripe = require("stripe") as typeof import("stripe");
-    const stripe = new Stripe.default(process.env.STRIPE_SECRET_KEY, { apiVersion: "2026-06-24.dahlia" });
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2026-06-24.dahlia" as Stripe.LatestApiVersion,
+    });
     const amountCents = Math.round(total * 100);
     try {
       const transfer = await stripe.transfers.create({

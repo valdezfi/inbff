@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import Stripe from "stripe";
 
 export async function POST() {
   const session = await getSession();
@@ -11,9 +12,9 @@ export async function POST() {
     return NextResponse.json({ error: "Stripe is not configured." }, { status: 503 });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Stripe = require("stripe") as typeof import("stripe");
-  const stripe = new Stripe.default(stripeKey, { apiVersion: "2026-06-24.dahlia" });
+  const stripe = new Stripe(stripeKey, {
+    apiVersion: "2026-06-24.dahlia" as Stripe.LatestApiVersion,
+  });
 
   const user = await db.findUserById(session.userId);
   if (!user) return NextResponse.json({ error: "User not found." }, { status: 404 });

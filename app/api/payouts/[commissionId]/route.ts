@@ -7,19 +7,18 @@
  *  - Idempotency key = commissionId → prevents double-pay on network retry
  *  - Requires affiliate's Stripe account to be connected — no silent "paid without transfer"
  *  - Loads affiliate directly by ID (no N+1 program-affiliates scan)
- *  - Stripe SDK loaded at module scope (not per request)
+ *  - Stripe SDK loaded via static import (serverExternalPackages keeps it as native require)
  */
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import Stripe from "stripe";
 
-// Load Stripe at module scope once — not on every request
+// Initialise once at module scope — not on every request.
+// stripe is in serverExternalPackages so it's a native Node.js require.
 const stripeKey = process.env.STRIPE_SECRET_KEY;
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const stripe = stripeKey
-  ? new (require("stripe") as typeof import("stripe")).default(stripeKey, {
-      apiVersion: "2026-06-24.dahlia",
-    })
+  ? new Stripe(stripeKey, { apiVersion: "2026-06-24.dahlia" as Stripe.LatestApiVersion })
   : null;
 
 export async function POST(

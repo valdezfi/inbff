@@ -6,6 +6,11 @@ const nextConfig: NextConfig = {
   // without a full node_modules install.
   output: "standalone",
 
+  // Keep these packages as native Node.js requires — not bundled by Turbopack.
+  // stripe: CJS module.exports pattern breaks under ESM interop bundling.
+  // mysql2: native C++ bindings must stay external.
+  serverExternalPackages: ["stripe", "mysql2"],
+
   // Explicitly pin the Turbopack root to this package directory.
   // This silences the "multiple lockfiles" warning when the repo has a
   // parent-level package-lock.json alongside this one.
