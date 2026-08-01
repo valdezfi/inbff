@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs";
 const COOKIE_NAME = "session";
 
 // Session lifetime: 24h
+
+
 const SESSION_MAX_AGE = 60 * 60 * 24;
 
 function getSecret(): Uint8Array {
