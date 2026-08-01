@@ -35,12 +35,13 @@ export async function POST(req: NextRequest) {
   ).toString("base64url");
 
   const callbackUrl      = `${appUrl}/api/shopify/unified/callback`;
-  const errorRedirectUrl = `${appUrl}/dashboard/connect-shopify`;
+  const errorRedirectUrl = `${appUrl}/dashboard/connect-shopify?error=unified-integration-disabled`;
 
   const redirectUrl =
     `https://api.unified.to/unified/integration/auth/${workspaceId}/shopify` +
     `?redirect=true` +
     `&success_redirect=${encodeURIComponent(`${callbackUrl}?state=${state}`)}` +
+    `&failure_redirect=${encodeURIComponent(errorRedirectUrl)}` +
     `&error_redirect=${encodeURIComponent(errorRedirectUrl)}`;
 
   return NextResponse.json({ redirectUrl });
