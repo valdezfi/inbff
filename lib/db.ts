@@ -233,6 +233,12 @@ export async function findStoreById(id: string): Promise<ShopifyStore | null> {
   return rows[0] ?? null;
 }
 
+export async function findStoreByAccessToken(accessToken: string): Promise<ShopifyStore | null> {
+  if (!useMySQL) return getJson().read().stores.find(s => s.accessToken === accessToken) ?? null;
+  const rows = await q<StoreRow>(`SELECT ${STORE_SELECT} FROM shopify_stores WHERE access_token=? LIMIT 1`, [accessToken]);
+  return rows[0] ?? null;
+}
+
 export async function upsertStore(store: Omit<ShopifyStore, 'connectedAt'>): Promise<ShopifyStore> {
   if (!useMySQL) {
     let result!: ShopifyStore;
@@ -769,7 +775,7 @@ const _db = {
   read, transaction,
   findUserByEmail, findUserById, findUserByVerificationToken,
   createUser, verifyUserEmail, updateVerificationToken, updateUserRole, updateUserStripeAccount,
-  findStoresByUserId, findStoreByDomain, findStoreById, upsertStore,
+  findStoresByUserId, findStoreByDomain, findStoreById, findStoreByAccessToken, upsertStore,
   findProductsByStoreId, upsertProducts, findProgramProductIds, setProgramProducts,
   findProgramsByUserId, findProgramById, findActivePrograms, createProgram, updateProgram, getMarketplaceStats,
   findAffiliatesByProgramId, findAffiliateByCode, findAffiliateByProgramAndEmail, findAffiliatesByUserId,

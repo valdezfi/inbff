@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   const shopDomain = `${parsed.data.shopDomain.toLowerCase()}.myshopify.com`;
   const apiKey     = process.env.SHOPIFY_API_KEY;
   const redirectUri = process.env.SHOPIFY_REDIRECT_URI;
-  const scopes     = process.env.SHOPIFY_SCOPES ?? "read_orders,write_script_tags";
+  const scopes     = process.env.SHOPIFY_SCOPES ?? "read_orders,read_products,write_script_tags";
 
   if (!apiKey || !redirectUri) {
     return NextResponse.json(
