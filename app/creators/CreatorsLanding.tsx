@@ -38,15 +38,15 @@ const whyJoin = [
     icon: DollarSign,
     color: "text-emerald-400",
     bg: "bg-emerald-400/10",
-    title: "5% of every transaction — automatically",
-    desc: "No negotiating rates. No invoicing. Every sale you drive pays you 5% straight to your account via Stripe. It just works.",
+    title: "Earn the rate each program offers",
+    desc: "Choose programs that fit your audience. Every eligible sale you drive is tracked and paid through the program's payout process.",
   },
   {
     icon: Zap,
     color: "text-blue-400",
     bg: "bg-blue-400/10",
-    title: "Your link is live in 30 seconds",
-    desc: "Fill out your name and email on any store's invite page. That's it. You get a unique referral link instantly — no approval process, no waiting.",
+    title: "Join programs and share your link",
+    desc: "Open programs give you a link right away; approval-based programs notify you when your application is accepted.",
   },
   {
     icon: BarChart3,
@@ -59,8 +59,8 @@ const whyJoin = [
     icon: Shield,
     color: "text-amber-400",
     bg: "bg-amber-400/10",
-    title: "30-day cookie window",
-    desc: "If someone clicks your link today and buys next week, you still get credited. We track referrals for a full 30 days.",
+    title: "Program-specific attribution windows",
+    desc: "Each program shows its attribution window before you join, so you know how long a referral can be credited.",
   },
   {
     icon: Clock,
@@ -87,7 +87,7 @@ const howItWorks = [
   {
     step: "02",
     title: "Enter your name & email",
-    desc: "No account required. Just your name and email — we generate your unique referral link immediately.",
+    desc: "Create a creator account, then join open programs instantly or apply to programs that review applicants.",
   },
   {
     step: "03",
@@ -102,7 +102,7 @@ const howItWorks = [
   {
     step: "05",
     title: "Get paid",
-    desc: "The store owner pays out via Stripe Connect. 5% of the transaction hits your account — no friction, no delay.",
+    desc: "The store owner pays out through Stripe Connect once your approved earnings reach that program's threshold.",
   },
 ];
 
@@ -118,7 +118,7 @@ const testimonials = [
   },
   {
     quote:
-      "The 30-day cookie is the real deal. Someone clicked my link, thought about it for two weeks, then bought. I still got paid.",
+      "The attribution window was clear before I joined. A customer returned later and the sale was credited correctly.",
     name: "Jordan K.",
     handle: "@jordanreviews",
     platform: "YouTube",
@@ -142,8 +142,8 @@ const faqs = [
     a: "No. You just enter your name and email on the program's invite page. Your referral link is generated instantly — no password, no dashboard to manage.",
   },
   {
-    q: "How exactly does the 5% work?",
-    a: "When someone buys through your referral link, the store pays you 5% of the order total. So if they spend $200, you earn $10. Simple math, automatic calculation.",
+    q: "How does commission work?",
+    a: "Each program shows its commission rate before you join. When an eligible customer buys through your referral link, the platform calculates your earnings automatically.",
   },
   {
     q: "When do I get paid?",
@@ -151,7 +151,7 @@ const faqs = [
   },
   {
     q: "What if someone visits the store but doesn't buy immediately?",
-    a: "We set a 30-day cookie when they click your link. If they come back and buy within 30 days, you still get credited for the sale.",
+    a: "Each program sets its own attribution window. If a customer buys within that displayed window, the sale can be credited to your referral link.",
   },
   {
     q: "Can I join multiple programs?",
@@ -159,7 +159,7 @@ const faqs = [
   },
   {
     q: "Is inBFF free for creators?",
-    a: "Completely free. The store owner pays for the inBFF subscription. You keep 100% of your 5% commission — we take nothing from creators.",
+    a: "Completely free for creators. Program commission rates and payout terms are displayed before you join.",
   },
 ];
 
@@ -190,7 +190,7 @@ export default function CreatorsLanding() {
               className="inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-1.5 text-xs font-medium text-purple-300"
             >
               <Star className="h-3.5 w-3.5 fill-current" />
-              Creator Program — Earn 5% on every sale you drive
+              Creator marketplace — Find programs that fit your audience
             </motion.div>
 
             <motion.h1
@@ -208,7 +208,7 @@ export default function CreatorsLanding() {
               className="max-w-2xl text-lg text-white/60"
             >
               Join inBFF as a creator. Share your unique referral link.
-              Earn <span className="font-semibold text-white">5% of every transaction</span> — tracked automatically,
+              Earn the <span className="font-semibold text-white">commission each program offers</span> — tracked automatically,
               paid out directly to your bank account. No spreadsheets. No chasing invoices. Just earnings.
             </motion.p>
 
@@ -237,8 +237,8 @@ export default function CreatorsLanding() {
               className="mt-8 grid grid-cols-3 gap-8 border-t border-white/10 pt-8"
             >
               {[
-                { value: <CountUp end={5} suffix="%" />, label: "of every transaction" },
-                { value: <><CountUp end={30} />-day</>, label: "cookie attribution" },
+                { value: "Flexible", label: "program commissions" },
+                { value: "Clear", label: "attribution windows" },
                 { value: "$0", label: "cost to join" },
               ].map((s, i) => (
                 <div key={i} className="text-center">
@@ -320,7 +320,7 @@ export default function CreatorsLanding() {
                 <span className="text-white/50">It all adds up.</span>
               </motion.h2>
               <motion.p variants={fadeUp} className="mt-4 text-white/60">
-                The math is simple. 5% on every order. The more you share, the more you earn.
+              Every program lists its commission before you join. The more qualified sales you drive, the more you earn.
               </motion.p>
               <motion.div variants={fadeUp} className="mt-8">
                 <Link
@@ -353,7 +353,7 @@ export default function CreatorsLanding() {
                   </div>
                 </div>
               ))}
-              <p className="text-xs text-center text-white/30 pt-1">Based on 5% commission rate</p>
+              <p className="text-xs text-center text-white/30 pt-1">Illustrative examples; actual rates vary by program.</p>
             </motion.div>
           </motion.div>
         </div>
@@ -518,7 +518,7 @@ export default function CreatorsLanding() {
               <motion.div variants={fadeUp} className="relative">
                 <div className="inline-flex items-center gap-2 rounded-full border border-purple-400/30 bg-purple-400/10 px-4 py-1.5 text-xs font-medium text-purple-300 mb-6">
                   <TrendingUp className="h-3.5 w-3.5" />
-                  5% rev share — no minimums, no approval
+                  Discover programs built for your audience
                 </div>
                 <h2 className="text-4xl font-bold tracking-tight text-white md:text-6xl mb-4">
                   Your audience is your{" "}
@@ -528,7 +528,7 @@ export default function CreatorsLanding() {
                 </h2>
                 <p className="text-lg text-white/60 max-w-xl mx-auto mb-8">
                   Join inBFF today. Get your referral link in 30 seconds and start
-                  earning 5% on every sale — completely free for creators.
+                  earning through the programs you choose — completely free for creators.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-3">
                   <Link
@@ -547,7 +547,7 @@ export default function CreatorsLanding() {
                   </Link>
                 </div>
                 <p className="mt-6 text-xs text-white/30">
-                  Free for creators · No account required to get your first link · Powered by inBFF
+                  Free for creators · Program terms are shown before you join · Powered by inBFF
                 </p>
               </motion.div>
             </div>

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { nanoid, customAlphabet } from "nanoid";
+import { nanoid } from "nanoid";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
+import { buildReferralUrl, generateUniqueReferralCode } from "@/lib/referrals";
 
-const codeAlphabet = customAlphabet("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", 7);
 type Ctx = { params: Promise<{ id: string; appId: string }> };
 
 export async function POST(_req: NextRequest, { params }: Ctx) {
@@ -30,14 +30,14 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
     userId: app.userId,
     name: user?.name ?? "Affiliate",
     email: user?.email ?? "",
-    referralCode: codeAlphabet(),
+    referralCode: await generateUniqueReferralCode(db.findAffiliateByCode),
     status: "active",
   });
 
   // Send approval email
   if (user) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    const referralUrl = `${appUrl}/r/${affiliate.referralCode}`;
+    const referralUrl = buildReferralUrl(appUrl, affiliate.referralCode);
     await sendEmail({
       to: user.email,
       subject: `You're approved for ${program.name}!`,

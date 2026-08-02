@@ -1,21 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { nanoid, customAlphabet } from "nanoid";
+import { nanoid } from "nanoid";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
 import { z } from "zod";
-
-const codeAlphabet = customAlphabet("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", 7);
-
-/** Collision-safe unique referral code — retries on duplicate. */
-async function generateUniqueCode(): Promise<string> {
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const code = codeAlphabet();
-    const exists = await db.findAffiliateByCode(code);
-    if (!exists) return code;
-  }
-  return nanoid(10).toUpperCase().replace(/[^A-Z0-9]/g, "X").slice(0, 10);
-}
+import { buildReferralUrl, generateUniqueReferralCode } from "@/lib/referrals";
 
 /** Minimal HTML escaping to prevent XSS in email templates. */
 function esc(str: string): string {
@@ -64,7 +53,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       status: "already_member",
       referralCode: existingAffiliate.referralCode,
-      referralUrl: `${appUrl}/r/${existingAffiliate.referralCode}`,
+      referralUrl: buildReferralUrl(appUrl, existingAffiliate.referralCode),
     });
   }
 
@@ -76,11 +65,11 @@ export async function POST(req: NextRequest) {
       userId:       session.userId,
       name:         user.name,
       email:        user.email,
-      referralCode: await generateUniqueCode(),
+      referralCode: await generateUniqueReferralCode(db.findAffiliateByCode),
       status:       "active",
     });
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    const referralUrl = `${appUrl}/r/${affiliate.referralCode}`;
+    const referralUrl = buildReferralUrl(appUrl, affiliate.referralCode);
     return NextResponse.json({ status: "joined", referralCode: affiliate.referralCode, referralUrl });
   }
 

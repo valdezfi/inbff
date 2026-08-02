@@ -710,6 +710,12 @@ export async function findCommissionById(id: string): Promise<Commission | null>
   return (rows[0] ?? null) as unknown as Commission | null;
 }
 
+export async function findCommissionByOrderId(orderId: string): Promise<Commission | null> {
+  if (!useMySQL) return getJson().read().commissions.find(c => c.orderId === orderId) ?? null;
+  const rows = await q<CommissionRow>(`SELECT ${COMMISSION_SELECT} FROM commissions WHERE order_id=? LIMIT 1`, [orderId]);
+  return (rows[0] ?? null) as unknown as Commission | null;
+}
+
 export async function createCommission(commission: Omit<Commission, 'createdAt' | 'paidAt' | 'stripeTransferId'>): Promise<Commission> {
   if (!useMySQL) {
     const n: Commission = { ...commission, createdAt: new Date().toISOString(), paidAt: null, stripeTransferId: null };
@@ -773,7 +779,7 @@ const _db = {
   findOrdersByProgramId, createOrder,
   findCommissionsByProgramIds, findCommissionsByAffiliateId, findPendingCommissionsByAffiliateId,
   findPendingCommissionsByAffiliateAndProgram,
-  findCommissionById, createCommission, markCommissionPaid, markCommissionsPaid,
+  findCommissionById, findCommissionByOrderId, createCommission, markCommissionPaid, markCommissionsPaid,
 };
 
 /** Named export — supports `import { db } from "@/lib/db"` */

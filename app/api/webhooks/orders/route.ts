@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { db } from "@/lib/db";
 import { verifyWebhookHmac } from "@/lib/shopify";
+import { isAttributionEligible, normalizeReferralCode } from "@/lib/referrals";
 
 async function readRawBody(req: NextRequest): Promise<Buffer> {
   const chunks: Uint8Array[] = [];
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
   // ── Extract referral code ──────────────────────────────────────────────────
   // Check note_attributes first (set by Shopify checkout snippet / Checkout UI Extension)
   let referralCode: string | null =
-    payload.note_attributes?.find(a => a.name.toLowerCase() === "ref")?.value?.trim() ?? null;
+    payload.note_attributes?.find(a => ["referly_ref", "ref"].includes(a.name.toLowerCase()))?.value?.trim() ?? null;
 
   // Fallback: parse ?ref= from the landing_site URL
   if (!referralCode && payload.landing_site) {
@@ -81,21 +82,21 @@ export async function POST(req: NextRequest) {
     } catch { /* ignore malformed URLs */ }
   }
 
+  referralCode = referralCode ? normalizeReferralCode(referralCode) : null;
   const affiliate = referralCode ? await db.findAffiliateByCode(referralCode) : null;
   const program   = affiliate    ? await db.findProgramById(affiliate.programId) : null;
 
   // ── Attribution window check ───────────────────────────────────────────────
-  let withinWindow = false;
-  if (affiliate && program) {
-    const lastClick = await db.findLatestClickByCode(referralCode!);
-    if (lastClick) {
-      const windowMs = program.attributionWindowDays * 24 * 60 * 60 * 1000;
-      withinWindow   = Date.now() - new Date(lastClick.createdAt).getTime() <= windowMs;
-    } else {
-      // No click record — still credit (direct link paste with valid code)
-      withinWindow = true;
-    }
-  }
+  const lastClick = referralCode ? await db.findLatestClickByCode(referralCode) : null;
+  const withinWindow = !!affiliate && !!program && isAttributionEligible({
+    affiliateActive: affiliate.status === "active",
+    programActive: program.status === "active",
+    programStoreId: program.storeId,
+    webhookStoreId: store.id,
+    latestClickAt: lastClick?.createdAt ?? null,
+    attributionWindowDays: program.attributionWindowDays,
+    now: Date.now(),
+  });
 
   // ── Eligible product + amount calculation ─────────────────────────────────
   let amount = parseFloat(payload.total_price);
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
 
   // ── Create commission ──────────────────────────────────────────────────────
   let commission = null;
-  if (affiliate && program && withinWindow && amount > 0) {
+  if (affiliate && program && withinWindow && amount > 0 && !await db.findCommissionByOrderId(order.id)) {
     const commissionAmount =
       Math.round(amount * (program.commissionRate / 100) * 100) / 100;
     commission = await db.createCommission({

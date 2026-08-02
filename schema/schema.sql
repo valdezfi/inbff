@@ -159,3 +159,4 @@ create table if not exists commissions (
 );
 create index if not exists commissions_affiliate_status_idx on commissions (affiliate_id, status);
 create index if not exists commissions_program_id_idx       on commissions (program_id);
+create unique index if not exists commissions_order_id_unique on commissions (order_id);

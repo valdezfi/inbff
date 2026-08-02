@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { isAttributionEligible, normalizeReferralCode } from "@/lib/referrals";
 
 const schema = z.object({
   shopDomain: z.string().min(1),
@@ -37,29 +38,30 @@ export async function POST(req: NextRequest) {
   const store = await db.findStoreByDomain(shopDomain);
   if (!store) return NextResponse.json({ error: "Unknown store." }, { status: 404 });
 
-  const affiliate = referralCode ? await db.findAffiliateByCode(referralCode) : null;
+  const code = referralCode ? normalizeReferralCode(referralCode) : null;
+  const affiliate = code ? await db.findAffiliateByCode(code) : null;
   const program = affiliate ? await db.findProgramById(affiliate.programId) : null;
+  const lastClick = code ? await db.findLatestClickByCode(code) : null;
+  const eligible = !!affiliate && !!program && isAttributionEligible({
+    affiliateActive: affiliate.status === "active", programActive: program.status === "active",
+    programStoreId: program.storeId, webhookStoreId: store.id,
+    latestClickAt: lastClick?.createdAt ?? null, attributionWindowDays: program.attributionWindowDays,
+    now: Date.now(),
+  });
 
   const order = await db.createOrder({
     id: nanoid(),
-    programId: program?.id ?? null,
+    programId: eligible && program ? program.id : null,
     storeId: store.id,
     shopifyOrderId,
-    referralCode: affiliate ? referralCode : null,
-    affiliateId: affiliate?.id ?? null,
+    referralCode: eligible ? code : null,
+    affiliateId: eligible && affiliate ? affiliate.id : null,
     amount,
     currency,
   });
 
-  const isNewOrder = !order.createdAt || new Date(order.createdAt).getTime() > Date.now() - 5000;
-
   let commission = null;
-  if (affiliate && program && order && isNewOrder) {
-    // Check if a commission already exists for this order (idempotent)
-    const existingCommissions = await db.findCommissionsByProgramIds([program.id]);
-    const alreadyCommissioned = existingCommissions.some(c => c.orderId === order.id);
-
-    if (!alreadyCommissioned) {
+  if (eligible && affiliate && program && !await db.findCommissionByOrderId(order.id)) {
       const commissionAmount =
         Math.round(amount * (program.commissionRate / 100) * 100) / 100;
       commission = await db.createCommission({
@@ -71,7 +73,6 @@ export async function POST(req: NextRequest) {
         rate: program.commissionRate,
         status: "pending",
       });
-    }
   }
 
   return NextResponse.json({ order, commission });

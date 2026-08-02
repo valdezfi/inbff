@@ -1,22 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { nanoid, customAlphabet } from "nanoid";
+import { nanoid } from "nanoid";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { z } from "zod";
-
-const codeAlphabet = customAlphabet("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", 7);
-
-/** Generate a unique referral code — retries up to 5 times on collision. */
-async function generateUniqueCode(): Promise<string> {
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const code = codeAlphabet();
-    // Check uniqueness before inserting (JSON DB has no unique index enforcement at DB level)
-    const existing = await db.findAffiliateByCode(code);
-    if (!existing) return code;
-  }
-  // Extremely unlikely — fall back to a longer nanoid-based code
-  return nanoid(10).toUpperCase().replace(/[^A-Z0-9]/g, "X").slice(0, 10);
-}
+import { generateUniqueReferralCode } from "@/lib/referrals";
 
 const schema = z.object({
   programId: z.string().min(1, "Program ID is required."),
@@ -75,7 +62,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Generate a collision-safe unique referral code
-  const referralCode = await generateUniqueCode();
+  const referralCode = await generateUniqueReferralCode(db.findAffiliateByCode);
 
   const affiliate = await db.createAffiliate({
     id:           nanoid(),
