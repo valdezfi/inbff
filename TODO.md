@@ -1,23 +1,11 @@
-# Deployment Fix — Track Progress
+# Task: Fix creator session state in Nav (shows "Sign in" even when logged in)
 
-## Completed ✓
+## Steps
 
-### Step 1: Unified.to Shopify integration error handling
-- [x] `app/api/shopify/unified/connect/route.ts` — added pre-flight check (integration status) + `error_redirect` param
-- [x] `app/api/shopify/unified/callback/route.ts` — handle `?error=` param → redirect to `/dashboard/connect-shopify?error=unified-integration-disabled`
-- [x] `app/dashboard/connect-shopify/page.tsx` — added friendly error message for `unified-integration-disabled`
+### Step 1: Add `GET /api/auth/me` endpoint
+- [x] Create `app/api/auth/me/route.ts` that reads the session cookie and returns the current user (name, email, role) or 401 if not logged in.
 
-### Step 2: Fix Heroku build type error
-- [x] `lib/db.ts` — added missing `findPendingCommissionsByAffiliateAndProgram()` method + registered it on `_db` export
-
-### Step 3: Fix Linux server deploy `yarn: command not found`
-- [x] `package.json` — added `packageManager: npm@10.9.0` + `engines.node >=20`
-- [x] `Procfile` (new) — `web: npm start`
-- [x] `nixpacks.toml` (new) — force npm provider, `npm ci` / `npm run build` / `npm start`
-- [x] `.dockerignore` (new) — exclude `node_modules`, `.next`, `data`, `.env`, `.git`, nested folder
-
-## Pushed to `main` on github.com/valdezfi/inbff
-- `c9c0024` — fix: force npm for all deployments (fixes 'yarn: command not found')
-- `1c0d929` — fix: add missing findPendingCommissionsByAffiliateAndProgram db method
-- `9ee1bf2` — fix: add pre-flight check and error handling for Unified.to Shopify integration
-
+### Step 2: Make `Nav` session-aware
+- [x] Update `app/components/landing/Nav.tsx` to fetch `/api/auth/me` on mount.
+- [x] If logged in, show user avatar initials + a Dashboard link (role-based) + Logout button.
+- [x] If logged out, keep the existing "Sign in / Get started" buttons.

@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Menu, X, LogOut } from "lucide-react";
 
 const links = [
   { label: "How it works", href: "#how" },
@@ -10,9 +11,28 @@ const links = [
   { label: "For Creators", href: "/creators" },
 ];
 
+interface MeUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+function initials(name: string) {
+  return (name || "?")
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 export function Nav() {
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<MeUser | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -20,6 +40,36 @@ export function Nav() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Fetch current auth state so the CTA reflects whether the user is logged in.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me")
+      .then(async (res) => {
+        if (res.status === 401) return;
+        const data = await res.json();
+        if (!cancelled && data.user) setUser(data.user);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const dashboardHref =
+    user?.role === "brand" ? "/dashboard" : "/affiliate/dashboard";
+
+  async function handleLogout() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
+    setUser(null);
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <header
@@ -64,20 +114,43 @@ export function Nav() {
           )}
         </nav>
 
-        {/* Desktop CTA */}
+        {/* Desktop CTA — reflects auth state */}
         <div className="hidden items-center gap-3 md:flex">
-          <Link
-            href="/login"
-            className="text-sm text-white/60 transition-colors hover:text-white"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/signup"
-            className="inline-flex items-center rounded-lg bg-[#3B82F6] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[#3B82F6]/20 transition-all hover:bg-[#2563eb]"
-          >
-            Get started
-          </Link>
+          {user ? (
+            <>
+              <Link
+                href={dashboardHref}
+                className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-[10px] font-bold text-white">
+                  {initials(user.name)}
+                </span>
+                Dashboard
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#3B82F6] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[#3B82F6]/20 transition-all hover:bg-[#2563eb]"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-sm text-white/60 transition-colors hover:text-white"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/signup"
+                className="inline-flex items-center rounded-lg bg-[#3B82F6] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[#3B82F6]/20 transition-all hover:bg-[#2563eb]"
+              >
+                Get started
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile burger */}
@@ -116,20 +189,44 @@ export function Nav() {
               )
             )}
             <div className="mt-3 flex flex-col gap-2 border-t border-white/10 pt-3">
-              <Link
-                href="/login"
-                onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-2.5 text-sm text-white/60 hover:bg-white/5 hover:text-white"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/signup"
-                onClick={() => setOpen(false)}
-                className="inline-flex items-center justify-center rounded-lg bg-[#3B82F6] px-4 py-2.5 text-sm font-semibold text-white"
-              >
-                Get started
-              </Link>
+              {user ? (
+                <>
+                  <Link
+                    href={dashboardHref}
+                    onClick={() => setOpen(false)}
+                    className="rounded-lg px-3 py-2.5 text-sm text-white/60 hover:bg-white/5 hover:text-white"
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setOpen(false);
+                      handleLogout();
+                    }}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#3B82F6] px-4 py-2.5 text-sm font-semibold text-white"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    Log out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setOpen(false)}
+                    className="rounded-lg px-3 py-2.5 text-sm text-white/60 hover:bg-white/5 hover:text-white"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setOpen(false)}
+                    className="inline-flex items-center justify-center rounded-lg bg-[#3B82F6] px-4 py-2.5 text-sm font-semibold text-white"
+                  >
+                    Get started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
