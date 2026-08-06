@@ -27,11 +27,11 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export function Nav() {
+export function Nav({ initialUser }: { initialUser?: MeUser | null }) {
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState<MeUser | null>(null);
+  const [user, setUser] = useState<MeUser | null>(initialUser ?? null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {

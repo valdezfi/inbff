@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { Nav } from "@/app/components/landing/Nav";
 import { Footer } from "@/app/components/landing/Footer";
 import { Search, SlidersHorizontal, Users, Clock, TrendingUp, ArrowRight, Tag } from "lucide-react";
@@ -30,6 +31,11 @@ export default async function MarketplacePage({
   const type     = sp.type ?? undefined;
   const page     = Number(sp.page ?? 1);
 
+  const session = await getSession();
+  const navUser = session
+    ? { id: session.userId, name: "", email: "", role: session.role }
+    : null;
+
   const [{ programs, total }, stats] = await Promise.all([
     db.findActivePrograms({ category, sort, search, type, page }),
     db.getMarketplaceStats(),
@@ -48,7 +54,7 @@ export default async function MarketplacePage({
 
   return (
     <div className="bg-[#0A0A0B] min-h-screen text-white">
-      <Nav />
+      <Nav initialUser={navUser} />
 
       {/* Header */}
       <div className="pt-24 pb-12 border-b border-white/10">

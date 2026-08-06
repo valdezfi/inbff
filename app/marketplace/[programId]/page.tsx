@@ -34,6 +34,9 @@ export default async function ProgramDetailPage({ params }: Ctx) {
 
   // Check if current user is already an affiliate
   const session = await getSession();
+  const navUser = session
+    ? { id: session.userId, name: "", email: "", role: session.role }
+    : null;
   let existingCode: string | null = null;
   let existingStatus: string | null = null;
   if (session) {
@@ -50,7 +53,7 @@ export default async function ProgramDetailPage({ params }: Ctx) {
 
   return (
     <div className="bg-[#0A0A0B] min-h-screen text-white">
-      <Nav />
+      <Nav initialUser={navUser} />
       <div className="mx-auto max-w-4xl px-6 pt-28 pb-24">
         <Link href="/marketplace" className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors mb-8">
           <ArrowLeft className="h-3.5 w-3.5" /> Back to marketplace

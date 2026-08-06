@@ -164,10 +164,14 @@ const faqs = [
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function CreatorsLanding() {
+export default function CreatorsLanding({
+  navUser,
+}: {
+  navUser?: { id: string; name: string; email: string; role: string } | null;
+}) {
   return (
     <div className="bg-[#0A0A0B] text-white">
-      <Nav />
+      <Nav initialUser={navUser} />
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section className="relative isolate flex min-h-screen items-center overflow-hidden pt-24">

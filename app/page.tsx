@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
 import { Nav } from "./components/landing/Nav";
 import { Hero } from "./components/landing/Hero";
 import { HowItWorks } from "./components/landing/HowItWorks";
@@ -20,9 +21,14 @@ export default async function Home({
     redirect("/dashboard/connect-shopify?error=unified-integration-disabled");
   }
 
+  const session = await getSession();
+  const navUser = session
+    ? { id: session.userId, name: "", email: "", role: session.role }
+    : null;
+
   return (
     <>
-      <Nav />
+      <Nav initialUser={navUser} />
       <main className="flex-1">
         <Hero />
         <HowItWorks />

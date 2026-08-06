@@ -1,11 +1,21 @@
-# Task: Fix creator session state in Nav (shows "Sign in" even when logged in)
+# Task: Fix Unified.to Shopify integration error handling + Nav auth detection
 
-## Steps
+## Completed Steps
 
-### Step 1: Add `GET /api/auth/me` endpoint
-- [x] Create `app/api/auth/me/route.ts` that reads the session cookie and returns the current user (name, email, role) or 401 if not logged in.
+### Step 1: Update `app/api/shopify/unified/connect/route.ts`
+- [x] Add pre-flight check: call Unified.to API to verify Shopify integration is enabled before redirecting
+- [x] Add `error_redirect` param to the auth URL so errors redirect to connect-shopify page
 
-### Step 2: Make `Nav` session-aware
-- [x] Update `app/components/landing/Nav.tsx` to fetch `/api/auth/me` on mount.
-- [x] If logged in, show user avatar initials + a Dashboard link (role-based) + Logout button.
-- [x] If logged out, keep the existing "Sign in / Get started" buttons.
+### Step 2: Update `app/api/shopify/unified/callback/route.ts`
+- [x] Handle `?error=` query param from Unified.to and redirect to `/dashboard/connect-shopify?error=unified-integration-disabled`
+
+### Step 3: Update `app/dashboard/connect-shopify/page.tsx`
+- [x] Add "unified-integration-disabled" to the error messages map with user-friendly text
+
+### Step 4: Fix Nav auth-detection race condition (marketplace showing "Sign in")
+- [x] Update `app/components/landing/Nav.tsx` to accept `initialUser` prop
+- [x] Update `app/marketplace/page.tsx` to pass session user to Nav
+- [x] Update `app/marketplace/[programId]/page.tsx` to pass session user to Nav
+- [x] Update `app/page.tsx` (home) to pass session user to Nav
+- [x] Update `app/creators/page.tsx` + `app/creators/CreatorsLanding.tsx` to pass session user to Nav
+- [x] Update `app/page.tsx` to also handle Unified.to root error redirect
