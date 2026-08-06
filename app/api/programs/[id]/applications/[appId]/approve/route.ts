@@ -30,7 +30,7 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
     userId: app.userId,
     name: user?.name ?? "Affiliate",
     email: user?.email ?? "",
-    referralCode: await generateUniqueReferralCode(db.findAffiliateByCode),
+    referralCode: await generateUniqueReferralCode(db.findAffiliateByCodeAnyStatus),
     status: "active",
   });
 

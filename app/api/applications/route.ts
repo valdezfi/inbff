@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       userId:       session.userId,
       name:         user.name,
       email:        user.email,
-      referralCode: await generateUniqueReferralCode(db.findAffiliateByCode),
+      referralCode: await generateUniqueReferralCode(db.findAffiliateByCodeAnyStatus),
       status:       "active",
     });
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";

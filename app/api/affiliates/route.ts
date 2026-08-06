@@ -49,6 +49,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Affiliate program not found or not active." }, { status: 404 });
   }
 
+  // Approval-required programs must go through brand review — this legacy
+  // endpoint only handles instant ("open") joins. Without this check, anyone
+  // who knew a programId could bypass approval entirely.
+  if (program.programType !== "open") {
+    return NextResponse.json(
+      { error: "This program requires approval to join. Please sign in and apply from the marketplace." },
+      { status: 403 }
+    );
+  }
+
   // Idempotent — re-joining with same email returns the existing record
   const existing = await db.findAffiliateByProgramAndEmail(programId, email);
   if (existing) {
@@ -62,7 +72,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Generate a collision-safe unique referral code
-  const referralCode = await generateUniqueReferralCode(db.findAffiliateByCode);
+  const referralCode = await generateUniqueReferralCode(db.findAffiliateByCodeAnyStatus);
 
   const affiliate = await db.createAffiliate({
     id:           nanoid(),

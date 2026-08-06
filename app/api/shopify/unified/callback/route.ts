@@ -78,8 +78,10 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Upsert store — accessToken holds the Unified.to connectionId
-  const existingStore = await db.findStoreByDomain(shopDomain).catch(() => null);
+  // Upsert store — accessToken holds the Unified.to connectionId.
+  // Scoped to this user so reconnecting never collides with another brand's
+  // store row that happens to share the same shop domain.
+  const existingStore = await db.findStoreByUserAndDomain(userId, shopDomain).catch(() => null);
   const store = await db.upsertStore({
     id:            existingStore?.id ?? nanoid(),
     userId,

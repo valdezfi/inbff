@@ -1,162 +1,184 @@
--- inBFF — Production Postgres schema (full, idempotent)
--- Run: psql $POSTGRES_URL -f schema/schema.sql
+-- inBFF — Production MySQL 8 schema
+-- lib/db.ts talks to this database via `mysql2/promise` when MYSQL_URL is set.
+-- Run once against a fresh database:
+--   mysql --host=<host> --user=<user> -p <database> < schema/schema.sql
+-- (docker-compose mounts this file as a MySQL init script and runs it
+-- automatically the first time the db container starts with an empty volume.)
+-- Table creation is safe to re-run (CREATE TABLE IF NOT EXISTS); the
+-- CREATE INDEX statements are not — MySQL has no IF NOT EXISTS for indexes,
+-- so re-running this file against an already-initialized database will
+-- error with "Duplicate key name". Use a migration tool for later changes.
+
+SET default_storage_engine = InnoDB;
 
 -- ─── Users ────────────────────────────────────────────────────────────────────
-create table if not exists users (
-  id                        text        primary key,
-  email                     text        unique not null,
-  password_hash             text        not null,
-  name                      text        not null,
-  created_at                timestamptz not null default now(),
-  role                      text        not null default 'brand'
-                              check (role in ('brand','creator')),
-  email_verified            boolean     not null default false,
-  verification_token        text        unique,
-  verification_token_expiry timestamptz,
-  stripe_account_id         text        -- affiliate Stripe Connect account
+CREATE TABLE IF NOT EXISTS users (
+  id                        VARCHAR(40)  PRIMARY KEY,
+  email                     VARCHAR(255) NOT NULL UNIQUE,
+  password_hash             VARCHAR(255) NOT NULL,
+  name                      VARCHAR(255) NOT NULL,
+  created_at                TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  role                      VARCHAR(20)  NOT NULL DEFAULT 'brand'
+                              CHECK (role IN ('brand','creator')),
+  email_verified            TINYINT(1)   NOT NULL DEFAULT 0,
+  verification_token        VARCHAR(255) UNIQUE,
+  verification_token_expiry TIMESTAMP(3) NULL,
+  stripe_account_id         VARCHAR(255) -- affiliate Stripe Connect account
 );
 
--- Migrate old role values if upgrading from previous schema
-update users set role = 'brand'   where role in ('creator','both');
-update users set role = 'creator' where role = 'affiliate';
+-- Migrate old role values if upgrading from a previous schema
+UPDATE users SET role = 'brand'   WHERE role IN ('creator','both');
+UPDATE users SET role = 'creator' WHERE role = 'affiliate';
 
 -- ─── Shopify stores ───────────────────────────────────────────────────────────
-create table if not exists shopify_stores (
-  id             text        primary key,
-  user_id        text        not null references users(id) on delete cascade,
-  shop_domain    text        not null,
-  access_token   text,
-  webhook_secret text,                           -- per-store webhook signing secret
-  connected_at   timestamptz not null default now(),
-  unique (user_id, shop_domain)
+CREATE TABLE IF NOT EXISTS shopify_stores (
+  id             VARCHAR(40)  PRIMARY KEY,
+  user_id        VARCHAR(40)  NOT NULL,
+  shop_domain    VARCHAR(255) NOT NULL,
+  access_token   VARCHAR(255),
+  webhook_secret VARCHAR(255),                    -- per-store webhook signing secret
+  connected_at   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  UNIQUE KEY shopify_stores_user_domain_unique (user_id, shop_domain),
+  CONSTRAINT shopify_stores_user_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
--- Add webhook_secret if upgrading from an older schema
-alter table shopify_stores add column if not exists webhook_secret text;
 
 -- ─── Shopify product cache ────────────────────────────────────────────────────
-create table if not exists shopify_products (
-  id                  text         primary key,
-  store_id            text         not null references shopify_stores(id) on delete cascade,
-  shopify_product_id  text         not null,
-  title               text         not null,
-  image_url           text,
-  price               numeric(12,2),
-  handle              text         not null,
-  synced_at           timestamptz  not null default now(),
-  unique (store_id, shopify_product_id)
+CREATE TABLE IF NOT EXISTS shopify_products (
+  id                  VARCHAR(40)   PRIMARY KEY,
+  store_id            VARCHAR(40)   NOT NULL,
+  shopify_product_id  VARCHAR(64)   NOT NULL,
+  title               VARCHAR(500)  NOT NULL,
+  image_url           TEXT,
+  price               DECIMAL(12,2),
+  handle              VARCHAR(255)  NOT NULL,
+  synced_at           TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  UNIQUE KEY shopify_products_store_product_unique (store_id, shopify_product_id),
+  CONSTRAINT shopify_products_store_fk FOREIGN KEY (store_id) REFERENCES shopify_stores(id) ON DELETE CASCADE
 );
-create index if not exists products_store_idx on shopify_products (store_id);
+CREATE INDEX products_store_idx ON shopify_products (store_id);
 
 -- ─── Affiliate programs ───────────────────────────────────────────────────────
-create table if not exists affiliate_programs (
-  id                      text         primary key,
-  user_id                 text         not null references users(id) on delete cascade,
-  store_id                text         not null references shopify_stores(id) on delete cascade,
-  name                    text         not null,
-  description             text,
-  category                text         not null default 'Other',
-  banner_url              text,
-  commission_rate         numeric(5,2) not null check (commission_rate >= 0 and commission_rate <= 100),
-  program_type            text         not null default 'open'
-                            check (program_type in ('open','approval')),
-  attribution_window_days integer      not null default 30,
-  payout_threshold        numeric(12,2) not null default 50,
-  payout_schedule         text         not null default 'manual'
-                            check (payout_schedule in ('manual','weekly','monthly')),
-  currency                text         not null default 'USD',
-  status                  text         not null default 'draft'
-                            check (status in ('draft','active','paused','deleted')),
-  all_products            boolean      not null default true,
-  created_at              timestamptz  not null default now()
+CREATE TABLE IF NOT EXISTS affiliate_programs (
+  id                      VARCHAR(40)   PRIMARY KEY,
+  user_id                 VARCHAR(40)   NOT NULL,
+  store_id                VARCHAR(40)   NOT NULL,
+  name                    VARCHAR(255)  NOT NULL,
+  description             TEXT,
+  category                VARCHAR(100)  NOT NULL DEFAULT 'Other',
+  banner_url              TEXT,
+  commission_rate         DECIMAL(5,2)  NOT NULL CHECK (commission_rate >= 0 AND commission_rate <= 100),
+  program_type            VARCHAR(20)   NOT NULL DEFAULT 'open'
+                            CHECK (program_type IN ('open','approval')),
+  attribution_window_days INT           NOT NULL DEFAULT 30,
+  payout_threshold        DECIMAL(12,2) NOT NULL DEFAULT 50,
+  payout_schedule         VARCHAR(20)   NOT NULL DEFAULT 'manual'
+                            CHECK (payout_schedule IN ('manual','weekly','monthly')),
+  currency                VARCHAR(10)   NOT NULL DEFAULT 'USD',
+  status                  VARCHAR(20)   NOT NULL DEFAULT 'draft'
+                            CHECK (status IN ('draft','active','paused','deleted')),
+  all_products            TINYINT(1)    NOT NULL DEFAULT 1,
+  created_at              TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  CONSTRAINT affiliate_programs_user_fk  FOREIGN KEY (user_id)  REFERENCES users(id)           ON DELETE CASCADE,
+  CONSTRAINT affiliate_programs_store_fk FOREIGN KEY (store_id) REFERENCES shopify_stores(id)   ON DELETE CASCADE
 );
-create index if not exists programs_status_idx   on affiliate_programs (status);
-create index if not exists programs_category_idx on affiliate_programs (category);
-create index if not exists programs_user_idx     on affiliate_programs (user_id);
+CREATE INDEX programs_status_idx   ON affiliate_programs (status);
+CREATE INDEX programs_category_idx ON affiliate_programs (category);
+CREATE INDEX programs_user_idx     ON affiliate_programs (user_id);
 
 -- ─── Program ↔ product eligibility ───────────────────────────────────────────
-create table if not exists program_products (
-  program_id  text not null references affiliate_programs(id) on delete cascade,
-  product_id  text not null references shopify_products(id)   on delete cascade,
-  primary key (program_id, product_id)
+CREATE TABLE IF NOT EXISTS program_products (
+  program_id  VARCHAR(40) NOT NULL,
+  product_id  VARCHAR(40) NOT NULL,
+  PRIMARY KEY (program_id, product_id),
+  CONSTRAINT program_products_program_fk FOREIGN KEY (program_id) REFERENCES affiliate_programs(id) ON DELETE CASCADE,
+  CONSTRAINT program_products_product_fk FOREIGN KEY (product_id) REFERENCES shopify_products(id)   ON DELETE CASCADE
 );
 
 -- ─── Affiliates ───────────────────────────────────────────────────────────────
-create table if not exists affiliates (
-  id            text        primary key,
-  program_id    text        not null references affiliate_programs(id) on delete cascade,
-  user_id       text        references users(id) on delete set null,
-  name          text        not null,
-  email         text        not null,
-  referral_code text        unique not null,
-  status        text        not null default 'active'
-                  check (status in ('active','paused')),
-  joined_at     timestamptz not null default now(),
-  unique (program_id, email)
+CREATE TABLE IF NOT EXISTS affiliates (
+  id            VARCHAR(40)  PRIMARY KEY,
+  program_id    VARCHAR(40)  NOT NULL,
+  user_id       VARCHAR(40),
+  name          VARCHAR(255) NOT NULL,
+  email         VARCHAR(255) NOT NULL,
+  referral_code VARCHAR(16)  NOT NULL UNIQUE,
+  status        VARCHAR(20)  NOT NULL DEFAULT 'active'
+                  CHECK (status IN ('active','paused')),
+  joined_at     TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  UNIQUE KEY affiliates_program_email_unique (program_id, email),
+  CONSTRAINT affiliates_program_fk FOREIGN KEY (program_id) REFERENCES affiliate_programs(id) ON DELETE CASCADE,
+  CONSTRAINT affiliates_user_fk    FOREIGN KEY (user_id)    REFERENCES users(id)              ON DELETE SET NULL
 );
-create index if not exists affiliates_referral_code_idx on affiliates (referral_code);
-create index if not exists affiliates_user_id_idx       on affiliates (user_id);
+CREATE INDEX affiliates_referral_code_idx ON affiliates (referral_code);
+CREATE INDEX affiliates_user_id_idx       ON affiliates (user_id);
 
 -- ─── Affiliate applications ───────────────────────────────────────────────────
-create table if not exists affiliate_applications (
-  id           text        primary key,
-  program_id   text        not null references affiliate_programs(id) on delete cascade,
-  user_id      text        not null references users(id) on delete cascade,
-  status       text        not null default 'pending'
-                 check (status in ('pending','approved','rejected')),
-  pitch        text,
-  applied_at   timestamptz not null default now(),
-  reviewed_at  timestamptz,
-  unique (program_id, user_id)
+CREATE TABLE IF NOT EXISTS affiliate_applications (
+  id           VARCHAR(40)  PRIMARY KEY,
+  program_id   VARCHAR(40)  NOT NULL,
+  user_id      VARCHAR(40)  NOT NULL,
+  status       VARCHAR(20)  NOT NULL DEFAULT 'pending'
+                 CHECK (status IN ('pending','approved','rejected')),
+  pitch        TEXT,
+  applied_at   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  reviewed_at  TIMESTAMP(3) NULL,
+  UNIQUE KEY affiliate_applications_program_user_unique (program_id, user_id),
+  CONSTRAINT affiliate_applications_program_fk FOREIGN KEY (program_id) REFERENCES affiliate_programs(id) ON DELETE CASCADE,
+  CONSTRAINT affiliate_applications_user_fk    FOREIGN KEY (user_id)    REFERENCES users(id)              ON DELETE CASCADE
 );
-create index if not exists applications_user_idx    on affiliate_applications (user_id);
-create index if not exists applications_program_idx on affiliate_applications (program_id, status);
+CREATE INDEX applications_user_idx    ON affiliate_applications (user_id);
+CREATE INDEX applications_program_idx ON affiliate_applications (program_id, status);
 
 -- ─── Referral clicks ──────────────────────────────────────────────────────────
-create table if not exists referral_clicks (
-  id            text        primary key,
-  referral_code text        not null,
-  affiliate_id  text        not null references affiliates(id) on delete cascade,
-  program_id    text        not null references affiliate_programs(id) on delete cascade,
-  ip_address    text,
-  user_agent    text,
-  created_at    timestamptz not null default now()
+CREATE TABLE IF NOT EXISTS referral_clicks (
+  id            VARCHAR(40)  PRIMARY KEY,
+  referral_code VARCHAR(16)  NOT NULL,
+  affiliate_id  VARCHAR(40)  NOT NULL,
+  program_id    VARCHAR(40)  NOT NULL,
+  ip_address    VARCHAR(64),
+  user_agent    VARCHAR(500),
+  created_at    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  CONSTRAINT referral_clicks_affiliate_fk FOREIGN KEY (affiliate_id) REFERENCES affiliates(id)         ON DELETE CASCADE,
+  CONSTRAINT referral_clicks_program_fk   FOREIGN KEY (program_id)   REFERENCES affiliate_programs(id)  ON DELETE CASCADE
 );
-create index if not exists referral_clicks_affiliate_id_idx on referral_clicks (affiliate_id);
-create index if not exists referral_clicks_program_id_idx   on referral_clicks (program_id);
-create index if not exists referral_clicks_code_time_idx    on referral_clicks (referral_code, created_at desc);
+CREATE INDEX referral_clicks_affiliate_id_idx ON referral_clicks (affiliate_id);
+CREATE INDEX referral_clicks_program_id_idx   ON referral_clicks (program_id);
+CREATE INDEX referral_clicks_code_time_idx    ON referral_clicks (referral_code, created_at DESC);
 
 -- ─── Orders ───────────────────────────────────────────────────────────────────
-create table if not exists orders (
-  id               text          primary key,
-  program_id       text          references affiliate_programs(id) on delete set null,
-  store_id         text          not null references shopify_stores(id) on delete cascade,
-  shopify_order_id text          not null,
-  referral_code    text,
-  affiliate_id     text          references affiliates(id) on delete set null,
-  amount           numeric(12,2) not null check (amount > 0),
-  currency         text          not null default 'USD',
-  created_at       timestamptz   not null default now(),
-  unique (store_id, shopify_order_id)
+CREATE TABLE IF NOT EXISTS orders (
+  id               VARCHAR(40)   PRIMARY KEY,
+  program_id       VARCHAR(40),
+  store_id         VARCHAR(40)   NOT NULL,
+  shopify_order_id VARCHAR(64)   NOT NULL,
+  referral_code    VARCHAR(16),
+  affiliate_id     VARCHAR(40),
+  amount           DECIMAL(12,2) NOT NULL CHECK (amount > 0),
+  currency         VARCHAR(10)   NOT NULL DEFAULT 'USD',
+  created_at       TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  UNIQUE KEY orders_store_shopify_order_unique (store_id, shopify_order_id),
+  CONSTRAINT orders_program_fk    FOREIGN KEY (program_id)   REFERENCES affiliate_programs(id) ON DELETE SET NULL,
+  CONSTRAINT orders_store_fk      FOREIGN KEY (store_id)     REFERENCES shopify_stores(id)     ON DELETE CASCADE,
+  CONSTRAINT orders_affiliate_fk  FOREIGN KEY (affiliate_id) REFERENCES affiliates(id)         ON DELETE SET NULL
 );
-create index if not exists orders_affiliate_idx on orders (affiliate_id);
-create index if not exists orders_program_idx   on orders (program_id);
+CREATE INDEX orders_affiliate_idx ON orders (affiliate_id);
+CREATE INDEX orders_program_idx   ON orders (program_id);
 
 -- ─── Commissions ─────────────────────────────────────────────────────────────
-create type if not exists commission_status as enum ('pending', 'paid');
-
-create table if not exists commissions (
-  id                 text              primary key,
-  order_id           text              not null references orders(id) on delete cascade,
-  affiliate_id       text              not null references affiliates(id) on delete cascade,
-  program_id         text              not null references affiliate_programs(id) on delete cascade,
-  amount             numeric(12,2)     not null,
-  rate               numeric(5,2)      not null,
-  status             commission_status not null default 'pending',
-  created_at         timestamptz       not null default now(),
-  paid_at            timestamptz,
-  stripe_transfer_id text
+CREATE TABLE IF NOT EXISTS commissions (
+  id                 VARCHAR(40)   PRIMARY KEY,
+  order_id           VARCHAR(40)   NOT NULL UNIQUE,
+  affiliate_id       VARCHAR(40)   NOT NULL,
+  program_id         VARCHAR(40)   NOT NULL,
+  amount             DECIMAL(12,2) NOT NULL,
+  rate               DECIMAL(5,2)  NOT NULL,
+  status             ENUM('pending','paid') NOT NULL DEFAULT 'pending',
+  created_at         TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  paid_at            TIMESTAMP(3)  NULL,
+  stripe_transfer_id VARCHAR(255),
+  CONSTRAINT commissions_order_fk     FOREIGN KEY (order_id)     REFERENCES orders(id)             ON DELETE CASCADE,
+  CONSTRAINT commissions_affiliate_fk FOREIGN KEY (affiliate_id) REFERENCES affiliates(id)          ON DELETE CASCADE,
+  CONSTRAINT commissions_program_fk   FOREIGN KEY (program_id)   REFERENCES affiliate_programs(id)  ON DELETE CASCADE
 );
-create index if not exists commissions_affiliate_status_idx on commissions (affiliate_id, status);
-create index if not exists commissions_program_id_idx       on commissions (program_id);
-create unique index if not exists commissions_order_id_unique on commissions (order_id);
+CREATE INDEX commissions_affiliate_status_idx ON commissions (affiliate_id, status);
+CREATE INDEX commissions_program_id_idx       ON commissions (program_id);

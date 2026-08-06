@@ -227,6 +227,18 @@ export async function findStoreByDomain(shopDomain: string): Promise<ShopifyStor
   return rows[0] ?? null;
 }
 
+/**
+ * Look up a store by (userId, shopDomain) — the actual unique key on shopify_stores.
+ * Use this (never the userId-less findStoreByDomain) before an OAuth-callback upsert,
+ * so reconnecting preserves *this* user's row instead of colliding with another
+ * brand's store that happens to share the same shop domain.
+ */
+export async function findStoreByUserAndDomain(userId: string, shopDomain: string): Promise<ShopifyStore | null> {
+  if (!useMySQL) return getJson().read().stores.find(s => s.userId === userId && s.shopDomain === shopDomain) ?? null;
+  const rows = await q<StoreRow>(`SELECT ${STORE_SELECT} FROM shopify_stores WHERE user_id=? AND shop_domain=? LIMIT 1`, [userId, shopDomain]);
+  return rows[0] ?? null;
+}
+
 export async function findStoreById(id: string): Promise<ShopifyStore | null> {
   if (!useMySQL) return getJson().read().stores.find(s => s.id === id) ?? null;
   const rows = await q<StoreRow>(`SELECT ${STORE_SELECT} FROM shopify_stores WHERE id=? LIMIT 1`, [id]);
@@ -509,6 +521,20 @@ export async function findAffiliateByCode(code: string): Promise<Affiliate | nul
   return (rows[0] ?? null) as unknown as Affiliate | null;
 }
 
+/**
+ * Look up an affiliate by referral code regardless of status.
+ * referral_code has a global UNIQUE constraint, so uniqueness checks
+ * (see generateUniqueReferralCode) must see paused affiliates too —
+ * findAffiliateByCode alone would let a new code collide with a paused
+ * affiliate's code and fail the DB's unique constraint (or, in JSON mode,
+ * silently create two affiliates sharing one code).
+ */
+export async function findAffiliateByCodeAnyStatus(code: string): Promise<Affiliate | null> {
+  if (!useMySQL) return getJson().read().affiliates.find(a => a.referralCode === code) ?? null;
+  const rows = await q<AffiliateRow>(`SELECT ${AFFILIATE_SELECT} FROM affiliates WHERE referral_code=? LIMIT 1`, [code]);
+  return (rows[0] ?? null) as unknown as Affiliate | null;
+}
+
 export async function findAffiliateByProgramAndEmail(programId: string, email: string): Promise<Affiliate | null> {
   if (!useMySQL) return getJson().read().affiliates.find(a => a.programId === programId && a.email.toLowerCase() === email.toLowerCase()) ?? null;
   const rows = await q<AffiliateRow>(`SELECT ${AFFILIATE_SELECT} FROM affiliates WHERE program_id=? AND LOWER(email)=LOWER(?) LIMIT 1`, [programId, email]);
@@ -775,10 +801,10 @@ const _db = {
   read, transaction,
   findUserByEmail, findUserById, findUserByVerificationToken,
   createUser, verifyUserEmail, updateVerificationToken, updateUserRole, updateUserStripeAccount,
-  findStoresByUserId, findStoreByDomain, findStoreById, findStoreByAccessToken, upsertStore,
+  findStoresByUserId, findStoreByDomain, findStoreByUserAndDomain, findStoreById, findStoreByAccessToken, upsertStore,
   findProductsByStoreId, upsertProducts, findProgramProductIds, setProgramProducts,
   findProgramsByUserId, findProgramById, findActivePrograms, createProgram, updateProgram, getMarketplaceStats,
-  findAffiliatesByProgramId, findAffiliateByCode, findAffiliateByProgramAndEmail, findAffiliatesByUserId,
+  findAffiliatesByProgramId, findAffiliateByCode, findAffiliateByCodeAnyStatus, findAffiliateByProgramAndEmail, findAffiliatesByUserId,
   createAffiliate, updateAffiliateStatus,
   findApplicationsByProgramId, findApplicationByProgramAndUser, createApplication, updateApplicationStatus,
   createClick, countClicksByAffiliateId, countClicksByProgramId, findLatestClickByCode,

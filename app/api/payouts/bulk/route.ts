@@ -29,36 +29,55 @@ export async function POST(req: NextRequest) {
   const affiliates = await db.findAffiliatesByProgramId(program.id);
 
   let paid = 0;
+  let skipped = 0; // no connected Stripe account — never marked paid
+  let failed = 0;  // transfer attempted but errored — never marked paid
   for (const commission of pending) {
     let transferId: string | null = null;
+
     if (stripe) {
       const aff = affiliates.find(a => a.id === commission.affiliateId);
-      if (aff?.userId) {
-        const user = await db.findUserById(aff.userId);
-        if (user?.stripeAccountId) {
-          try {
-            const t = await stripe.transfers.create({
-              amount:      Math.round(commission.amount * 100),
-              currency:    program.currency.toLowerCase(),
-              destination: user.stripeAccountId,
-              description: `inBFF bulk payout — ${program.name}`,
-              metadata: {
-                commissionId: commission.id,
-                programId:    program.id,
-                affiliateId:  commission.affiliateId,
-              },
-            });
-            transferId = t.id;
-          } catch (e) {
-            console.error("Stripe transfer error:", e);
-            continue;
+      const user = aff?.userId ? await db.findUserById(aff.userId) : null;
+
+      if (!user?.stripeAccountId) {
+        // No connected Stripe account — do NOT mark paid, or the affiliate
+        // would show as paid while never actually receiving a transfer.
+        skipped++;
+        continue;
+      }
+
+      try {
+        const t = await stripe.transfers.create(
+          {
+            amount:      Math.round(commission.amount * 100),
+            currency:    program.currency.toLowerCase(),
+            destination: user.stripeAccountId,
+            description: `inBFF bulk payout — ${program.name}`,
+            metadata: {
+              commissionId: commission.id,
+              programId:    program.id,
+              affiliateId:  commission.affiliateId,
+            },
+          },
+          {
+            // Same key scheme as the single-payout route — dedupes a retried
+            // bulk-pay request (and a commission already transferred via the
+            // single-payout endpoint) instead of double-paying the affiliate.
+            idempotencyKey: `payout-${commission.id}`,
           }
-        }
+        );
+        transferId = t.id;
+      } catch (e) {
+        console.error("Stripe transfer error:", e);
+        failed++;
+        continue;
       }
     }
+    // No STRIPE_SECRET_KEY → manual mode: mark paid without a transfer,
+    // same explicit behavior as the single-payout route.
+
     await db.markCommissionPaid(commission.id, transferId);
     paid++;
   }
 
-  return NextResponse.json({ paid });
+  return NextResponse.json({ paid, skipped, failed });
 }

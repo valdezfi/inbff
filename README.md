@@ -18,12 +18,9 @@ npm run dev
 Open http://localhost:3000. The app falls back to a local JSON file at
 `data/db.json` — no database needed for dev.
 
-**Demo login credentials:**
-
-| Role      | Email                | Password   |
-|-----------|----------------------|------------|
-| Creator   | creator@demo.com     | demo1234   |
-| Affiliate | affiliate@demo.com   | demo1234   |
+There is no pre-seeded demo account. Sign up at `/signup` — choose **brand**
+to connect a Shopify store and create an affiliate program, or **creator**
+to browse the marketplace and join one.
 
 ---
 
@@ -86,7 +83,8 @@ Copy `.env.example` to `.env.local` and fill in values:
 | Variable | Required | Purpose |
 |---|---|---|
 | `AUTH_SECRET` | **Always** | Secret for signing JWT session tokens. Run `openssl rand -hex 32`. |
-| `POSTGRES_URL` | Production | Postgres connection string. If unset, uses `data/db.json`. |
+| `MYSQL_URL` | Production | MySQL 8+ connection string (`mysql://user:pass@host:3306/db`). If unset, uses `data/db.json`. |
+| `MYSQL_SSL` | Production | Set to `false` to disable TLS (needed for local Docker MySQL). Defaults to enabled. |
 | `NEXT_PUBLIC_APP_URL` | Production | Full public URL, e.g. `https://inbff.app`. |
 | `SHOPIFY_API_KEY` | Shopify | From Shopify Partners → App setup. |
 | `SHOPIFY_API_SECRET` | Shopify | Used to verify OAuth HMAC and token exchange. |
@@ -100,15 +98,18 @@ Copy `.env.example` to `.env.local` and fill in values:
 
 ---
 
-## Setting up Postgres
+## Setting up MySQL
 
-Run `schema/schema.sql` against your database once to create all tables:
+Run `schema/schema.sql` against a fresh database once to create all tables
+(docker-compose does this automatically via `docker-entrypoint-initdb.d`):
 
 ```bash
-psql $POSTGRES_URL -f schema/schema.sql
+mysql --host=<host> --user=<user> -p <database> < schema/schema.sql
 ```
 
-The schema uses `IF NOT EXISTS` everywhere — safe to re-run.
+Table creation uses `IF NOT EXISTS` and is safe to re-run, but the index
+statements are not (MySQL has no `CREATE INDEX IF NOT EXISTS`) — only run
+this against an empty database.
 
 ---
 
@@ -131,13 +132,13 @@ app/
   store/[shopDomain]/             Dev-only test storefront
   api/                            All API routes
 lib/
-  db.ts       Postgres (when POSTGRES_URL set) or JSON file fallback
+  db.ts       MySQL (when MYSQL_URL set) or JSON file fallback
   types.ts    TypeScript interfaces
   auth.ts     JWT sessions + bcrypt
   email.ts    Mailgun email sending
   shopify.ts  Shopify API helpers
 schema/
-  schema.sql  Production Postgres schema (idempotent)
+  schema.sql  Production MySQL schema
 scripts/
   start.sh    Linux startup script
 Dockerfile    Docker image for Linux deployment

@@ -67,7 +67,10 @@ export async function GET(req: NextRequest) {
   const { access_token: accessToken } = await tokenRes.json() as { access_token: string };
 
   // ── Upsert store (preserves existing webhookSecret if reconnecting) ────────
-  const existingStore = await db.findStoreByDomain(shop).catch(() => null);
+  // Scoped to this user — a global domain lookup would collide with (and
+  // hijack) another brand's store row if that store happens to share a
+  // shop domain already connected under a different account.
+  const existingStore = await db.findStoreByUserAndDomain(userId, shop).catch(() => null);
   const storeId = existingStore?.id ?? nanoid();
 
   const store = await db.upsertStore({

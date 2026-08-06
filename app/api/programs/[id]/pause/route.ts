@@ -12,6 +12,17 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
   const program = await db.findProgramById(id);
   if (!program || program.userId !== session.userId) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
+  // Only toggle between active ⇄ paused. Without this guard, calling this
+  // endpoint on a draft program would activate it — bypassing the
+  // "must have a name" check enforced by /publish — and calling it on a
+  // deleted program would resurrect it.
+  if (program.status !== "active" && program.status !== "paused") {
+    return NextResponse.json(
+      { error: "Only active or paused programs can be toggled here. Publish a draft program first." },
+      { status: 400 }
+    );
+  }
+
   const newStatus = program.status === "active" ? "paused" : "active";
   const updated = await db.updateProgram(id, { status: newStatus });
   return NextResponse.json(updated);
