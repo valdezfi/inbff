@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { syncProducts, registerOrderWebhook, verifyOAuthHmac } from "@/lib/shopify";
 
 export async function GET(req: NextRequest) {
@@ -28,18 +29,36 @@ export async function GET(req: NextRequest) {
   }
 
   // ── Verify OAuth HMAC ──────────────────────────────────────────────────────
+  // This only proves the request really came from Shopify for `shop` — it
+  // says nothing about *whose* platform account should own the connection.
   if (!verifyOAuthHmac(searchParams, apiSecret)) {
     return NextResponse.redirect(
       new URL("/dashboard/connect-shopify?error=invalid-hmac", req.url)
     );
   }
 
-  // ── Decode state (userId + shopDomain + nonce) ─────────────────────────────
-  let userId: string;
+  // ── Bind to the current session, not to the client-echoed state ───────────
+  // `state` round-trips through the merchant's browser and Shopify's OAuth
+  // screen untouched — nothing stops an attacker from generating their own
+  // valid-looking state (with their own userId baked in) via this same
+  // /connect endpoint, then sending the resulting Shopify authorize URL to a
+  // victim. If the victim approved it, the old code would trust state's
+  // userId and hand the attacker a real access token for the victim's
+  // store. The session cookie can't be forged the same way, so the store
+  // must be attributed to whoever is actually logged in in *this* browser.
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.redirect(
+      new URL("/dashboard/connect-shopify?error=invalid-state", req.url)
+    );
+  }
+  const userId = session.userId;
+
+  // Decode state only to check it's the same shop that started this flow
+  // (defends against a stale/replayed authorize link for a different shop).
   try {
     const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf-8"));
-    userId = decoded.userId;
-    if (!userId || decoded.shopDomain !== shop) throw new Error("state mismatch");
+    if (decoded.shopDomain !== shop) throw new Error("state mismatch");
   } catch {
     return NextResponse.redirect(
       new URL("/dashboard/connect-shopify?error=invalid-state", req.url)

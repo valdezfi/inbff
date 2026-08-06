@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { syncProducts } from "@/lib/shopify";
+import { syncProducts, syncUnifiedProducts } from "@/lib/shopify";
 import { z } from "zod";
 
 export async function POST(req: NextRequest) {
@@ -20,6 +20,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Store has no access token — complete OAuth first." }, { status: 400 });
   }
 
-  const count = await syncProducts(store);
+  // Unified.to-connected stores hold `unified:<connectionId>` as their
+  // "access token" — that's not a real Shopify token, so it must go
+  // through the Unified.to product API, never the native Shopify sync.
+  const count = store.accessToken.startsWith("unified:")
+    ? await syncUnifiedProducts(store)
+    : await syncProducts(store);
   return NextResponse.json({ synced: count });
 }

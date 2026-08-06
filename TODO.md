@@ -61,6 +61,27 @@ brand pays out. Find and fix logic errors across the whole flow.
 - [x] (from prior session) Unified.to Shopify integration error handling —
       pre-flight check + `error_redirect` + root-URL error catch.
 
+- [x] Both Shopify OAuth callbacks (`app/api/shopify/callback`,
+      `app/api/shopify/unified/callback`) trusted `userId` decoded straight
+      out of the client-echoed `state` param. An attacker could call
+      `/api/shopify/connect` (or `/unified/connect`) themselves to mint a
+      valid `state` carrying *their own* userId, then send the resulting
+      Shopify/Unified.to authorize link to a victim brand. If the victim
+      completed the real consent screen for their own store, our callback
+      would attribute that real access token / connection to the
+      attacker's account — a store-hijack CSRF. Fixed both callbacks to
+      take `userId` from the current session cookie (unforgeable) instead,
+      only using decoded state for a same-shop consistency check.
+- [x] The "Re-sync anytime from your program" promise on the primary
+      (Unified.to) connect flow was broken: the manual `/api/shopify/sync`
+      route always called the native-Shopify `syncProducts()`, which sends
+      the store's `accessToken` straight to Shopify's Admin API. For a
+      Unified-connected store that "token" is the literal string
+      `unified:<connectionId>` — not a real Shopify token — so re-sync
+      silently synced 0 products for every brand who used the primary
+      connect method. Extracted `syncUnifiedProducts` into `lib/shopify.ts`
+      and made the sync route branch on how the store was connected.
+
 ## Still auditing (not yet started / in progress)
 
 - [ ] `lib/auth.ts` — session/JWT issuance, cookie flags, password hashing

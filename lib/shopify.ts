@@ -77,6 +77,57 @@ export async function syncProducts(store: ShopifyStore): Promise<number> {
   return total;
 }
 
+/**
+ * Fetch and cache the product catalog for a store connected via Unified.to.
+ * (Unified-connected stores hold `unified:<connectionId>` in `accessToken`
+ * instead of a real Shopify token, so they can never go through
+ * `syncProducts` above — that would send an invalid token straight to
+ * Shopify's Admin API and silently sync 0 products.)
+ */
+export async function syncUnifiedProducts(store: ShopifyStore): Promise<number> {
+  if (!store.accessToken?.startsWith("unified:")) return 0;
+  const connectionId = store.accessToken.slice("unified:".length);
+
+  const apiKey = process.env.UNIFIED_API_KEY;
+  if (!apiKey) {
+    console.warn("[unified] UNIFIED_API_KEY not set — skipping product sync");
+    return 0;
+  }
+
+  const res = await fetch(
+    `https://api.unified.to/commerce/${connectionId}/item?limit=100`,
+    { headers: { Authorization: `Bearer ${apiKey}` } }
+  );
+  if (!res.ok) {
+    console.error(`[unified] product sync failed for ${store.shopDomain}:`, res.status, await res.text());
+    return 0;
+  }
+
+  const items = await res.json() as Array<{
+    id: string;
+    name?: string;
+    title?: string;
+    media?: { url?: string }[];
+    variants?: { price?: number; currency?: string }[];
+    raw?: { handle?: string };
+  }>;
+
+  await db.upsertProducts(
+    items.map(item => ({
+      id:               nanoid(),
+      storeId:          store.id,
+      shopifyProductId: String(item.id),
+      title:            item.name ?? item.title ?? "Untitled",
+      imageUrl:         item.media?.[0]?.url ?? null,
+      price:            item.variants?.[0]?.price ?? null,
+      handle:           item.raw?.handle ?? String(item.id),
+    }))
+  );
+
+  console.log(`[unified] synced ${items.length} products for ${store.shopDomain}`);
+  return items.length;
+}
+
 // ─── Webhook registration ─────────────────────────────────────────────────────
 
 /**
