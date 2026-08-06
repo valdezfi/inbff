@@ -82,6 +82,18 @@ brand pays out. Find and fix logic errors across the whole flow.
       connect method. Extracted `syncUnifiedProducts` into `lib/shopify.ts`
       and made the sync route branch on how the store was connected.
 
+- [x] `POST /api/affiliate/payout` (the affiliate's own self-service payout
+      request) had the exact same flaw as `/api/payouts/bulk`, but
+      self-triggered by the affiliate: when Stripe was configured
+      platform-wide but *this* affiliate had no connected Stripe account,
+      the code skipped the transfer silently and still marked every
+      pending commission "paid" with a null transfer id. Any affiliate
+      could hit this endpoint directly (bypassing the disabled UI button)
+      and get their own commissions marked paid for free, with no money
+      ever moving. Now requires a connected Stripe account whenever Stripe
+      is configured, and adds an idempotency key (hashed commission-id set)
+      so a retried request can't double-pay.
+
 ## Still auditing (not yet started / in progress)
 
 - [ ] `lib/auth.ts` — session/JWT issuance, cookie flags, password hashing

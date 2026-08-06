@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { z } from "zod";
@@ -35,25 +36,49 @@ export async function POST(req: NextRequest) {
 
   let stripeTransferId: string | null = null;
 
-  if (process.env.STRIPE_SECRET_KEY && user.stripeAccountId) {
+  if (process.env.STRIPE_SECRET_KEY) {
+    // Stripe is configured platform-wide — a transfer is required, not
+    // optional. Without this check, an affiliate who never connected
+    // Stripe could still hit this endpoint directly and have every pending
+    // commission marked "paid" with no money ever moving.
+    if (!user.stripeAccountId) {
+      return NextResponse.json(
+        { error: "Connect your Stripe account before requesting a payout." },
+        { status: 400 }
+      );
+    }
+
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: "2026-06-24.dahlia" as Stripe.LatestApiVersion,
     });
     const amountCents = Math.round(total * 100);
     try {
-      const transfer = await stripe.transfers.create({
-        amount: amountCents,
-        currency: program.currency.toLowerCase(),
-        destination: user.stripeAccountId,
-        description: `inBFF payout — ${program.name}`,
-        metadata: { affiliateId: affiliate.id, programId: program.id },
-      });
+      const transfer = await stripe.transfers.create(
+        {
+          amount: amountCents,
+          currency: program.currency.toLowerCase(),
+          destination: user.stripeAccountId,
+          description: `inBFF payout — ${program.name}`,
+          metadata: { affiliateId: affiliate.id, programId: program.id },
+        },
+        {
+          // Same idempotency intent as the brand-initiated payout routes —
+          // a retried request pays out this exact batch once, not twice.
+          // Hashed (rather than joined raw) so the key stays well under
+          // Stripe's length limit no matter how many commissions batch in.
+          idempotencyKey: `affiliate-payout-${createHash("sha256")
+            .update(pending.map(c => c.id).sort().join(","))
+            .digest("hex")}`,
+        }
+      );
       stripeTransferId = transfer.id;
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Stripe transfer failed.";
       return NextResponse.json({ error: `Payment failed: ${msg}` }, { status: 502 });
     }
   }
+  // No STRIPE_SECRET_KEY → manual mode: mark paid without a transfer,
+  // same explicit behavior as the brand-initiated payout routes.
 
   // Mark all pending commissions as paid
   const updated = await Promise.all(
