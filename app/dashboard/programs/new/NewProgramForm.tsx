@@ -86,7 +86,11 @@ export default function NewProgramForm({ stores, initialStoreId }: {
   }
 
   // ── Create & publish program ─────────────────────────────────────────────
-  async function createProgram(status: "draft" | "active") {
+  // POST /api/programs always creates a draft (it doesn't accept a status
+  // field), so "publish" is a second step through the dedicated /publish
+  // endpoint — the one that enforces "must have a name" etc. Passing
+  // status:"active" straight into the create call is a no-op there.
+  async function createProgram(publish: boolean) {
     setError(null);
     setLoading(true);
 
@@ -100,7 +104,6 @@ export default function NewProgramForm({ stores, initialStoreId }: {
         payoutThreshold: Number(payoutThreshold),
         payoutSchedule, currency,
         allProducts,
-        status,
       }),
     });
     const data = await res.json();
@@ -115,17 +118,27 @@ export default function NewProgramForm({ stores, initialStoreId }: {
       });
     }
 
+    if (publish) {
+      const pubRes = await fetch(`/api/programs/${data.id}/publish`, { method: "POST" });
+      if (!pubRes.ok) {
+        const pubData = await pubRes.json().catch(() => ({}));
+        setError(pubData.error || "Program was saved as a draft, but publishing failed.");
+        setLoading(false);
+        return null;
+      }
+    }
+
     setLoading(false);
     return data.id as string;
   }
 
   async function onPublish() {
-    const id = await createProgram("active");
+    const id = await createProgram(true);
     if (id) { router.push(`/dashboard/programs/${id}`); router.refresh(); }
   }
 
   async function onSaveDraft() {
-    const id = await createProgram("draft");
+    const id = await createProgram(false);
     if (id) { router.push(`/dashboard/programs/${id}`); router.refresh(); }
   }
 

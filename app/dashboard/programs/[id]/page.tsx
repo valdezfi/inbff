@@ -113,12 +113,13 @@ export default async function ProgramDetailPage({
       </div>
 
       {/* ── Stats ──────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
         {[
           { icon: Users,        label: "Affiliates",       value: affiliates.filter(a => a.status === "active").length, color: "text-indigo-600", bg: "bg-indigo-50", gradClass: "stat-indigo" },
           { icon: MousePointer, label: "Total Clicks",     value: totalClicks,                                           color: "text-violet-600", bg: "bg-violet-50", gradClass: "stat-violet" },
           { icon: ShoppingBag,  label: "Orders",           value: orders.length,                                         color: "text-emerald-600",bg: "bg-emerald-50",gradClass: "stat-emerald" },
           { icon: TrendingUp,   label: "Pending Payouts",  value: `$${pendingAmt.toFixed(2)}`,                           color: "text-amber-600",  bg: "bg-amber-50",  gradClass: "stat-amber" },
+          { icon: TrendingUp,   label: "Total Earned",     value: `$${totalEarned.toFixed(2)}`,                          color: "text-emerald-600",bg: "bg-emerald-50",gradClass: "stat-emerald" },
         ].map(s => (
           <div key={s.label} className={`rounded-2xl border border-slate-200/80 p-5 card-shadow ${s.gradClass}`}>
             <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${s.bg} mb-3`}>
