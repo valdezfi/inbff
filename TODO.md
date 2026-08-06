@@ -94,6 +94,26 @@ brand pays out. Find and fix logic errors across the whole flow.
       is configured, and adds an idempotency key (hashed commission-id set)
       so a retried request can't double-pay.
 
+- [x] Affiliate Stripe Connect onboarding ("Stripe connection not working",
+      reported by user): two compounding bugs.
+      1. `stripeConnected` was computed as merely `!!user.stripeAccountId`,
+         which is set the instant the Express account object is created —
+         before the affiliate has filled out any of Stripe's hosted
+         onboarding form. The UI showed a green "connected" badge for an
+         account that couldn't receive a payout yet, so the first real
+         transfer failed with a confusing Stripe error. Now checks
+         `stripe.accounts.retrieve(...).payouts_enabled` before reporting
+         connected.
+      2. `/api/affiliate/stripe/onboard` had no error handling around the
+         Stripe SDK calls (every other Stripe route in the app wraps its
+         call in try/catch) and the client had none either — a real
+         Stripe-side error (e.g. Connect/Express not enabled on the
+         platform account, or a restricted API key missing account-write
+         permission) surfaced as an unhandled exception, and the "Set up
+         Stripe" button could hang on "Redirecting…" forever with nothing
+         telling the user what went wrong. Both sides now catch and report
+         the actual Stripe error message.
+
 ## Still auditing (not yet started / in progress)
 
 - [ ] `lib/auth.ts` — session/JWT issuance, cookie flags, password hashing

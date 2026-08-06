@@ -19,6 +19,28 @@ export default async function AffiliatePayoutsPage() {
 
   const hasStripe = !!process.env.STRIPE_SECRET_KEY;
 
+  // `user.stripeAccountId` is set the instant Stripe creates the Express
+  // account object — before the affiliate has actually filled out any of
+  // Stripe's hosted onboarding form. Treating that alone as "connected"
+  // shows a green "✓ connected" badge for an account that can't receive
+  // a payout yet, so the *first* real transfer attempt fails with a
+  // confusing Stripe error and the whole feature reads as broken. Ask
+  // Stripe whether the account can actually receive payouts before
+  // reporting it as connected.
+  let stripeConnected = false;
+  if (hasStripe && user?.stripeAccountId) {
+    try {
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+        apiVersion: "2026-06-24.dahlia" as import("stripe").Stripe.LatestApiVersion,
+      });
+      const account = await stripe.accounts.retrieve(user.stripeAccountId);
+      stripeConnected = !!account.payouts_enabled;
+    } catch (e) {
+      console.error("[affiliate payouts] failed to check Stripe account status:", e);
+    }
+  }
+
   return (
     <AffiliatePayoutClient
       programs={programs.map(p => ({
@@ -31,7 +53,7 @@ export default async function AffiliatePayoutsPage() {
         pending:        p.pending,
         paid:           p.paid,
       }))}
-      stripeConnected={!!user?.stripeAccountId}
+      stripeConnected={stripeConnected}
       hasStripe={hasStripe}
     />
   );

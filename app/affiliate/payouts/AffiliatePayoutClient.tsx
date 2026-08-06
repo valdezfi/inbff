@@ -27,11 +27,20 @@ export default function AffiliatePayoutClient({
 
   async function handleOnboard() {
     setOnboarding(true);
-    const res = await fetch("/api/affiliate/stripe/onboard", { method: "POST" });
-    const data = await res.json();
-    setOnboarding(false);
-    if (res.ok && data.url) window.location.href = data.url;
-    else setError(data.error ?? "Failed to start Stripe onboarding.");
+    setError(null);
+    try {
+      const res = await fetch("/api/affiliate/stripe/onboard", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        window.location.href = data.url; // navigating away — the finally below still fires harmlessly
+        return;
+      }
+      setError(data.error ?? "Failed to start Stripe onboarding.");
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setOnboarding(false);
+    }
   }
 
   async function handlePayout(programId: string) {
