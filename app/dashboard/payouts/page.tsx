@@ -2,6 +2,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import type { Commission } from "@/lib/types";
 import PayButton from "./PayButton";
+import BulkPayButton from "./BulkPayButton";
 import {
   CreditCard, Clock, CheckCircle2, TrendingUp, DollarSign,
   Info, AlertCircle,
@@ -109,8 +110,7 @@ export default async function PayoutsPage() {
               </span>
             )}
           </div>
-          <span className="text-sm font-bold text-amber-600">${pendingTotal.toFixed(2)}</span>
-        </div>
+          <span className="text-sm font-bold text-amber-600">${pendingTotal.toFixed(2)}</span>        </div>
         {pending.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <CheckCircle2 className="h-10 w-10 text-slate-200 mx-auto mb-3" />
@@ -119,6 +119,17 @@ export default async function PayoutsPage() {
           </div>
         ) : (
           <div>
+            {/* Bulk-pay strip — one row per program that has pending commissions */}
+            {programs
+              .map(p => ({ program: p, count: pending.filter(c => c.programId === p.id).length }))
+              .filter(({ count }) => count > 0)
+              .map(({ program, count }) => (
+                <div key={program.id} className="flex items-center justify-between px-6 py-3 bg-amber-50/60 border-b border-amber-100">
+                  <p className="text-xs font-semibold text-slate-600">{program.name}</p>
+                  <BulkPayButton programId={program.id} pendingCount={count} />
+                </div>
+              ))
+            }
             <TableHeader />
             <div className="divide-y divide-slate-100">
               {pending.map((c) => (

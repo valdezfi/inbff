@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CreditCard, ExternalLink, Loader2, CheckCircle2, DollarSign, Clock, Info } from "lucide-react";
 
 interface ProgramRow {
@@ -17,10 +17,26 @@ export default function AffiliatePayoutClient({
   hasStripe: boolean;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [onboarding, setOnboarding] = useState(false);
   const [payingId, setPayingId]     = useState<string | null>(null);
   const [paid, setPaid]             = useState<Set<string>>(new Set());
   const [error, setError]           = useState<string | null>(null);
+  const [toast,  setToast]          = useState<string | null>(null);
+
+  // Handle ?connected=1 and ?refresh=1 returned by Stripe after onboarding
+  useEffect(() => {
+    const connected = searchParams.get("connected");
+    const refresh   = searchParams.get("refresh");
+    if (connected === "1") {
+      setToast("Stripe account connected! You can now request payouts.");
+      router.replace("/affiliate/payouts");
+      router.refresh();
+    } else if (refresh === "1") {
+      setToast("Stripe onboarding session expired — please try again.");
+      router.replace("/affiliate/payouts");
+    }
+  }, [searchParams, router]);
 
   const totalPending = programs.reduce((s, p) => s + p.pending, 0);
   const totalPaid    = programs.reduce((s, p) => s + p.paid, 0);
@@ -64,6 +80,20 @@ export default function AffiliatePayoutClient({
           {hasStripe ? "Request your earnings via Stripe Connect" : "Track your earnings and request payouts"}
         </p>
       </div>
+
+      {/* Toast notification for ?connected=1 / ?refresh=1 */}
+      {toast && (
+        <div className={`rounded-xl border px-4 py-3 text-sm font-medium flex items-center gap-2 ${
+          toast.includes("connected")
+            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+            : "border-amber-200 bg-amber-50 text-amber-800"
+        }`}>
+          {toast.includes("connected")
+            ? <CheckCircle2 className="h-4 w-4 shrink-0" />
+            : <Info className="h-4 w-4 shrink-0" />}
+          {toast}
+        </div>
+      )}
 
       {/* Summary */}
       <div className="grid grid-cols-2 gap-4">

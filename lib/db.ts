@@ -796,6 +796,22 @@ export async function markCommissionsPaid(ids: string[], stripeTransferId: strin
   );
 }
 
+export async function revertCommissionToPending(id: string): Promise<Commission | null> {
+  if (!useMySQL) {
+    let updated: Commission | null = null;
+    await getJson().tx(db => {
+      const c = db.commissions.find(c => c.id === id);
+      if (c) { c.status = 'pending'; c.paidAt = null; c.stripeTransferId = null; updated = c; }
+    });
+    return updated;
+  }
+  await exec(
+    `UPDATE commissions SET status='pending', paid_at=NULL, stripe_transfer_id=NULL WHERE id=?`,
+    [id]
+  );
+  return findCommissionById(id);
+}
+
 // ─── Convenience re-export (keeps any existing `import * as db` usage working) ─
 const _db = {
   read, transaction,
@@ -812,6 +828,7 @@ const _db = {
   findCommissionsByProgramIds, findCommissionsByAffiliateId, findPendingCommissionsByAffiliateId,
   findPendingCommissionsByAffiliateAndProgram,
   findCommissionById, findCommissionByOrderId, createCommission, markCommissionPaid, markCommissionsPaid,
+  revertCommissionToPending,
 };
 
 /** Named export — supports `import { db } from "@/lib/db"` */

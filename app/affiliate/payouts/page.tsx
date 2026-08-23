@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import AffiliatePayoutClient from "./AffiliatePayoutClient";
+import { Loader2 } from "lucide-react";
 
 export default async function AffiliatePayoutsPage() {
   const session  = await getSession();
@@ -41,20 +43,29 @@ export default async function AffiliatePayoutsPage() {
     }
   }
 
+  const props = {
+    programs: programs.map(p => ({
+      affiliateId:     p.aff.id,
+      programId:       p.aff.programId,
+      programName:     p.program?.name ?? "—",
+      commissionRate:  p.program?.commissionRate ?? 0,
+      payoutThreshold: p.program?.payoutThreshold ?? 50,
+      currency:        p.program?.currency ?? "USD",
+      pending:         p.pending,
+      paid:            p.paid,
+    })),
+    stripeConnected,
+    hasStripe,
+  };
+
   return (
-    <AffiliatePayoutClient
-      programs={programs.map(p => ({
-        affiliateId:    p.aff.id,
-        programId:      p.aff.programId,
-        programName:    p.program?.name ?? "—",
-        commissionRate: p.program?.commissionRate ?? 0,
-        payoutThreshold:p.program?.payoutThreshold ?? 50,
-        currency:       p.program?.currency ?? "USD",
-        pending:        p.pending,
-        paid:           p.paid,
-      }))}
-      stripeConnected={stripeConnected}
-      hasStripe={hasStripe}
-    />
+    // AffiliatePayoutClient uses useSearchParams — must be inside Suspense
+    <Suspense fallback={
+      <div className="flex items-center gap-2 text-sm text-slate-500 py-8">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading payouts…
+      </div>
+    }>
+      <AffiliatePayoutClient {...props} />
+    </Suspense>
   );
 }
