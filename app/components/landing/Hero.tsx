@@ -37,7 +37,8 @@ export function Hero() {
             className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/60 backdrop-blur-sm transition-colors hover:text-white"
           >
             <Sparkles className="h-3 w-3 text-[#3B82F6]" />
-UGC Affiliate Engine Built            <ArrowRight className="h-3 w-3" />
+            Shopify UGC affiliate programs, fully automated
+            <ArrowRight className="h-3 w-3" />
           </motion.a>
 
           <motion.h1
@@ -46,14 +47,13 @@ UGC Affiliate Engine Built            <ArrowRight className="h-3 w-3" />
           >
             Turn your Shopify store into an{" "}
             <span className="bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] bg-clip-text text-transparent">
-              to Scale Your Store.
+              affiliate engine.
             </span>
           </motion.h1>
 
           <motion.p variants={item} className="max-w-xl text-lg text-white/60">
-            Connect your store, set a commission rate, and let the UGC creators bring you
-            customers using new accounts. We track every click, attribute every order, and calculate
-            every payout — automatically. Better content from motivated creators.
+       Connect your Shopify store, set your commission rate, and let real UGC creators build new social accounts around your brand. They create authentic, native content that feels like real social media — not traditional advertising. We track every click, attribute every sale, and automatically calculate every creator payout.
+ 
           </motion.p>
 
           <motion.div
