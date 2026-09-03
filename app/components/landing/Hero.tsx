@@ -47,7 +47,7 @@ export function Hero() {
           >
             Turn your Shopify store into an{" "}
             <span className="bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] bg-clip-text text-transparent">
-              affiliate engine.
+              UGC affiliate engine.
             </span>
           </motion.h1>
 
