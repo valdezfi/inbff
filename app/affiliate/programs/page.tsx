@@ -87,7 +87,7 @@ export default async function AffiliateProgramsPage() {
                     </div>
                     <p className="text-xs text-slate-400">
                       {store?.shopDomain ?? "Unknown store"} ·{" "}
-                      <span className="text-indigo-600 font-medium">{program?.commissionRate}%</span> commission
+                      <span className="text-indigo-600 font-medium">{program?.commissionRate ?? '—'}%</span> commission
                     </p>
                   </div>
                 </div>

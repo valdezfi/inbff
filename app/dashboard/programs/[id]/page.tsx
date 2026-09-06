@@ -36,7 +36,10 @@ export default async function ProgramDetailPage({
   const totalClicks = await db.countClicksByProgramId(id);
   const totalEarned = commissions.reduce((s, c) => s + c.amount, 0);
   const pendingAmt  = commissions.filter(c => c.status === "pending").reduce((s, c) => s + c.amount, 0);
-  const clickCounts = await Promise.all(affiliates.map(a => db.countClicksByAffiliateId(a.id)));
+  // Map clicks by affiliate ID — avoids index-alignment bugs if affiliate list changes
+  const clickCountMap = new Map(
+    await Promise.all(affiliates.map(async a => [a.id, await db.countClicksByAffiliateId(a.id)] as const))
+  );
 
   // Fetch product details for the selected products (if not allProducts)
   const storeProducts = !program.allProducts && selectedProductIds.length > 0
@@ -245,7 +248,7 @@ export default async function ProgramDetailPage({
               <div className="text-right">Earned</div>
             </div>
             <div className="divide-y divide-slate-100">
-              {affiliates.map((a, i) => {
+              {affiliates.map((a) => {
                 const earned = commissions.filter(c => c.affiliateId === a.id).reduce((s, c) => s + c.amount, 0);
                 return (
                   <div key={a.id} className="grid grid-cols-4 gap-4 px-6 py-3.5 items-center hover:bg-slate-50/80 transition-colors">
@@ -261,7 +264,7 @@ export default async function ProgramDetailPage({
                         <span className="text-[10px] rounded-full bg-amber-50 text-amber-600 px-1.5 py-0.5 font-medium">paused</span>
                       )}
                     </div>
-                    <div className="text-center text-sm font-semibold text-slate-700">{clickCounts[i]}</div>
+                    <div className="text-center text-sm font-semibold text-slate-700">{clickCountMap.get(a.id) ?? 0}</div>
                     <div className="text-right text-sm font-bold text-emerald-600">${earned.toFixed(2)}</div>
                   </div>
                 );
@@ -331,6 +334,14 @@ export default async function ProgramDetailPage({
                 );
               })}
             </div>
+            {orders.length > 20 && (
+              <div className="px-6 py-3 border-t border-slate-100 text-center text-xs text-slate-400">
+                Showing 20 of {orders.length} orders ·{" "}
+                <Link href="/dashboard/payouts" className="text-indigo-600 hover:text-indigo-700 font-medium">
+                  View all in payouts →
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </div>

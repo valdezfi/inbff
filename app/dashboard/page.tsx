@@ -38,6 +38,20 @@ export default async function DashboardOverview() {
   const paidAmount    = paid.reduce((s, c) => s + c.amount, 0);
   const totalRevenue  = allOrders.reduce((s, o) => s + o.amount, 0);
 
+  // Pre-fetch per-program stats in parallel — avoids sequential awaits inside JSX
+  const programRows = await Promise.all(
+    programs.slice(0, 5).map(async (p) => {
+      const store          = stores.find((s) => s.id === p.storeId);
+      const [affiliates, clicks] = await Promise.all([
+        db.findAffiliatesByProgramId(p.id),
+        db.countClicksByProgramId(p.id),
+      ]);
+      const progComms = commissions.filter((c) => c.programId === p.id);
+      const earned    = progComms.reduce((s, c) => s + c.amount, 0);
+      return { p, store, affiliateCount: affiliates.length, clicks, earned };
+    })
+  );
+
   // Empty / no-store state
   if (stores.length === 0) {
     return (
@@ -292,66 +306,57 @@ export default async function DashboardOverview() {
           </div>
         ) : (
           <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden card-shadow divide-y divide-slate-100">
-            {await Promise.all(
-              programs.slice(0, 5).map(async (p) => {
-                const store       = stores.find((s) => s.id === p.storeId);
-                const affiliates  = await db.findAffiliatesByProgramId(p.id);
-                const progComms   = commissions.filter((c) => c.programId === p.id);
-                const earned      = progComms.reduce((s, c) => s + c.amount, 0);
-                const clicks      = await db.countClicksByProgramId(p.id);
-
-                const statusColor: Record<string, string> = {
-                  active:  "badge-active",
-                  paused:  "badge-paused",
-                  draft:   "badge-draft",
-                  deleted: "badge-rejected",
-                };
-
-                return (
-                  <Link
-                    key={p.id}
-                    href={`/dashboard/programs/${p.id}`}
-                    className="flex items-center justify-between px-6 py-4 hover:bg-slate-50/80 transition-colors group"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md">
-                        <Users className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                            {p.name}
-                          </p>
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusColor[p.status] ?? "badge-draft"}`}>
-                            {p.status}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          {store?.shopDomain ?? "No store"} · {p.commissionRate}% commission
+            {programRows.map(({ p, store, affiliateCount, clicks, earned }) => {
+              const statusColor: Record<string, string> = {
+                active:  "badge-active",
+                paused:  "badge-paused",
+                draft:   "badge-draft",
+                deleted: "badge-rejected",
+              };
+              return (
+                <Link
+                  key={p.id}
+                  href={`/dashboard/programs/${p.id}`}
+                  className="flex items-center justify-between px-6 py-4 hover:bg-slate-50/80 transition-colors group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md">
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                          {p.name}
                         </p>
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusColor[p.status] ?? "badge-draft"}`}>
+                          {p.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {store?.shopDomain ?? "No store"} · {p.commissionRate}% commission
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="hidden sm:flex items-center gap-5">
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-slate-900">{affiliateCount}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-slate-400">affiliates</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-slate-900">{clicks}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-slate-400">clicks</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-emerald-600">${earned.toFixed(2)}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-slate-400">earned</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-6">
-                      <div className="hidden sm:flex items-center gap-5">
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-slate-900">{affiliates.length}</p>
-                          <p className="text-[10px] uppercase tracking-wider text-slate-400">affiliates</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-slate-900">{clicks}</p>
-                          <p className="text-[10px] uppercase tracking-wider text-slate-400">clicks</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-emerald-600">${earned.toFixed(2)}</p>
-                          <p className="text-[10px] uppercase tracking-wider text-slate-400">earned</p>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-indigo-400 transition-colors" />
-                    </div>
-                  </Link>
-                );
-              })
-            )}
+                    <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

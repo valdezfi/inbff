@@ -170,7 +170,7 @@ export default async function PayoutsPage() {
           </div>
         ) : (
           <div>
-            <TableHeader />
+            <TableHeader lastCol="Status" />
             <div className="divide-y divide-slate-100">
               {paid.map((c) => (
                 <CommissionRow
@@ -188,12 +188,12 @@ export default async function PayoutsPage() {
   );
 }
 
-function TableHeader() {
+function TableHeader({ lastCol = "Action" }: { lastCol?: string }) {
   return (
     <div className="grid grid-cols-4 gap-4 px-6 py-3 bg-slate-50 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100">
       <div className="col-span-2">Affiliate</div>
       <div className="text-right">Amount</div>
-      <div className="text-right">Action</div>
+      <div className="text-right">{lastCol}</div>
     </div>
   );
 }

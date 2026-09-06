@@ -149,10 +149,13 @@ export default function DashboardShell({
 
       {/* Bottom: help + user */}
       <div className="p-3 border-t border-white/10 space-y-1">
-        <button className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/50 hover:bg-white/8 hover:text-white/80 transition-all">
+        <a
+          href="mailto:support@inbff.com"
+          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/50 hover:bg-white/8 hover:text-white/80 transition-all"
+        >
           <HelpCircle className="h-4 w-4" />
           Help & Support
-        </button>
+        </a>
 
         {/* User card */}
         <div className="mt-1 flex items-center gap-3 rounded-xl bg-white/8 px-3 py-2.5 backdrop-blur-sm">
@@ -206,7 +209,7 @@ export default function DashboardShell({
             </button>
             {/* Breadcrumb */}
             <div className="hidden lg:flex items-center gap-2 text-sm">
-              <span className="text-slate-400 font-medium">Creator</span>
+              <span className="text-slate-400 font-medium">Brand</span>
               <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
               <span className="font-semibold text-slate-700">
                 {currentNav?.label ?? "Dashboard"}
@@ -217,11 +220,14 @@ export default function DashboardShell({
           <div className="flex items-center gap-2">
             <button className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all">
               <Bell className="h-4.5 w-4.5" />
-              <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-indigo-500" />
             </button>
-            <button className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all">
+            <Link
+              href="/dashboard/connect-shopify"
+              title="Settings"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all"
+            >
               <Settings className="h-4 w-4" />
-            </button>
+            </Link>
             <div className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-bold text-white shadow-md ring-2 ring-white">
               {initials(userName)}
             </div>

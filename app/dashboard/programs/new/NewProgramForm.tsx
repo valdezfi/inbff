@@ -86,11 +86,8 @@ export default function NewProgramForm({ stores, initialStoreId }: {
   }
 
   // ── Create & publish program ─────────────────────────────────────────────
-  // POST /api/programs always creates a draft (it doesn't accept a status
-  // field), so "publish" is a second step through the dedicated /publish
-  // endpoint — the one that enforces "must have a name" etc. Passing
-  // status:"active" straight into the create call is a no-op there.
   async function createProgram(publish: boolean) {
+    if (loading) return null; // prevent double-submit
     setError(null);
     setLoading(true);
 
@@ -148,7 +145,7 @@ export default function NewProgramForm({ stores, initialStoreId }: {
 
   function canAdvance() {
     if (step === "details") return name.trim().length > 0 && !!storeId;
-    if (step === "products") return true;
+    if (step === "products") return allProducts || selectedIds.size > 0;
     if (step === "commission") return commissionRate > 0;
     return true;
   }
@@ -325,6 +322,11 @@ export default function NewProgramForm({ stores, initialStoreId }: {
                   className="text-indigo-600 hover:text-indigo-700 font-medium">Select all</button>
               </div>
             </div>
+          )}
+          {!allProducts && selectedIds.size === 0 && products.length > 0 && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+              Select at least one product — affiliates won&apos;t earn on any order until you do.
+            </p>
           )}
         </div>
       )}

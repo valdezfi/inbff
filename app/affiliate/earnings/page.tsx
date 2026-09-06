@@ -12,12 +12,20 @@ export default async function AffiliateEarningsPage() {
     stripeTransferId: string | null;
   }> = [];
 
-  for (const aff of affiliates) {
-    const commissions = await db.findCommissionsByAffiliateId(aff.id);
-    for (const c of commissions) {
-      const program = await db.findProgramById(c.programId);
-      allCommissions.push({ ...c, programName: program?.name ?? "—" });
-    }
+  // Batch: collect all commissions first, then fetch unique programs in parallel
+  const allAffiliateCommissions = await Promise.all(
+    affiliates.map(aff => db.findCommissionsByAffiliateId(aff.id))
+  );
+  const flat = allAffiliateCommissions.flat();
+
+  const uniqueProgramIds = [...new Set(flat.map(c => c.programId))];
+  const programMap = new Map(
+    (await Promise.all(uniqueProgramIds.map(id => db.findProgramById(id))))
+      .map((p, i) => [uniqueProgramIds[i], p] as const)
+  );
+
+  for (const c of flat) {
+    allCommissions.push({ ...c, programName: programMap.get(c.programId)?.name ?? "—" });
   }
   allCommissions.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
