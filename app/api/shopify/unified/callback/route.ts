@@ -72,12 +72,22 @@ export async function GET(req: NextRequest) {
         { headers: { Authorization: `Bearer ${unifiedKey}` } }
       );
       if (res.ok) {
-        const conn = await res.json() as { external_xref?: string; integration_type?: string };
-        if (conn.external_xref) {
-          // external_xref is the myshopify.com domain
-          shopDomain = conn.external_xref.includes(".myshopify.com")
-            ? conn.external_xref
-            : `${conn.external_xref}.myshopify.com`;
+        const conn = await res.json() as {
+          external_xref?: string;
+          integration_type?: string;
+          permissions?: { shopify?: { shop?: string } };
+          auth?: { meta?: { shop_domain?: string } };
+        };
+        // Unified.to echoes back our external_xref (userId) — don't use it as shopDomain.
+        // Instead, read the actual Shopify store domain from the connection's auth metadata.
+        const rawShop =
+          conn.permissions?.shopify?.shop ??
+          conn.auth?.meta?.shop_domain ??
+          null;
+        if (rawShop) {
+          shopDomain = rawShop.includes(".myshopify.com")
+            ? rawShop
+            : `${rawShop}.myshopify.com`;
         }
       }
     } catch (e) {
