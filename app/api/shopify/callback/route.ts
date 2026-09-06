@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { syncProducts, registerOrderWebhook, verifyOAuthHmac } from "@/lib/shopify";
+import { decodeOAuthState, syncProducts, registerOrderWebhook, verifyOAuthHmac } from "@/lib/shopify";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -37,15 +37,9 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // ── Bind to the current session, not to the client-echoed state ───────────
-  // `state` round-trips through the merchant's browser and Shopify's OAuth
-  // screen untouched — nothing stops an attacker from generating their own
-  // valid-looking state (with their own userId baked in) via this same
-  // /connect endpoint, then sending the resulting Shopify authorize URL to a
-  // victim. If the victim approved it, the old code would trust state's
-  // userId and hand the attacker a real access token for the victim's
-  // store. The session cookie can't be forged the same way, so the store
-  // must be attributed to whoever is actually logged in in *this* browser.
+  // Bind the result both to the initiating session and the HttpOnly state
+  // cookie issued by /connect. State is browser-visible, so it is never used
+  // to select the platform user.
   const session = await getSession();
   if (!session) {
     return NextResponse.redirect(
@@ -54,12 +48,9 @@ export async function GET(req: NextRequest) {
   }
   const userId = session.userId;
 
-  // Decode state only to check it's the same shop that started this flow
-  // (defends against a stale/replayed authorize link for a different shop).
-  try {
-    const decoded = JSON.parse(Buffer.from(state, "base64url").toString("utf-8"));
-    if (decoded.shopDomain !== shop) throw new Error("state mismatch");
-  } catch {
+  const decodedState = decodeOAuthState(state);
+  const stateCookie = req.cookies.get("shopify_oauth_state")?.value;
+  if (!decodedState || decodedState.shopDomain !== shop || stateCookie !== state) {
     return NextResponse.redirect(
       new URL("/dashboard/connect-shopify?error=invalid-state", req.url)
     );
@@ -97,7 +88,7 @@ export async function GET(req: NextRequest) {
     userId,
     shopDomain:    shop,
     accessToken,
-    webhookSecret: existingStore?.webhookSecret ?? null, // preserved; registerOrderWebhook may update
+    webhookSecret: existingStore?.webhookSecret ?? null,
   });
 
   // ── Register webhook + sync products (background, non-blocking) ───────────
@@ -107,5 +98,7 @@ export async function GET(req: NextRequest) {
   ]).catch(err => console.error("[shopify callback] post-auth tasks failed:", err));
 
   // ── Redirect to program creation wizard ───────────────────────────────────
-  return NextResponse.redirect(new URL(`/dashboard/programs/new?storeId=${store.id}`, req.url));
+  const response = NextResponse.redirect(new URL(`/dashboard/programs/new?storeId=${store.id}`, req.url));
+  response.cookies.set("shopify_oauth_state", "", { path: "/api/shopify/callback", maxAge: 0 });
+  return response;
 }

@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   const shopDomain = `${parsed.data.shopDomain.toLowerCase()}.myshopify.com`;
   const apiKey     = process.env.SHOPIFY_API_KEY;
   const redirectUri = process.env.SHOPIFY_REDIRECT_URI;
-  const scopes     = process.env.SHOPIFY_SCOPES ?? "read_orders,read_products,write_script_tags";
+  const scopes     = process.env.SHOPIFY_SCOPES ?? "read_orders,read_products";
 
   if (!apiKey || !redirectUri) {
     return NextResponse.json(
@@ -58,11 +58,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Production: build Shopify OAuth URL ───────────────────────────────────
-  // Embed userId + shopDomain in a signed state param to survive the round-trip
-  const nonce = crypto.getRandomValues(new Uint32Array(2)).join("");
+  // Bind this authorization response to the initiating browser with an
+  // HttpOnly state cookie. The callback verifies both the cookie and state.
+  const nonce = crypto.randomUUID().replaceAll("-", "");
   const state = Buffer.from(
-    JSON.stringify({ nonce, userId: session.userId, shopDomain })
+    JSON.stringify({ nonce, shopDomain })
   ).toString("base64url");
 
   const authUrl =
@@ -72,5 +72,13 @@ export async function POST(req: NextRequest) {
     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
     `&state=${encodeURIComponent(state)}`;
 
-  return NextResponse.json({ redirectUrl: authUrl });
+  const response = NextResponse.json({ redirectUrl: authUrl });
+  response.cookies.set("shopify_oauth_state", state, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/api/shopify/callback",
+    maxAge: 10 * 60,
+  });
+  return response;
 }

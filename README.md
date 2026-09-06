@@ -87,10 +87,10 @@ Copy `.env.example` to `.env.local` and fill in values:
 | `MYSQL_SSL` | Production | Set to `false` to disable TLS (needed for local Docker MySQL). Defaults to enabled. |
 | `NEXT_PUBLIC_APP_URL` | Production | Full public URL, e.g. `https://inbff.app`. |
 | `SHOPIFY_API_KEY` | Shopify | From Shopify Partners → App setup. |
-| `SHOPIFY_API_SECRET` | Shopify | Used to verify OAuth HMAC and token exchange. |
+| `SHOPIFY_API_SECRET` | Shopify | Used for OAuth, token exchange, and Shopify order-webhook HMAC verification. |
 | `SHOPIFY_REDIRECT_URI` | Shopify | OAuth callback URL registered in your Shopify app. |
-| `SHOPIFY_SCOPES` | Shopify | `read_orders` minimum. |
-| `SHOPIFY_WEBHOOK_SECRET` | Shopify | Signing secret for verifying `orders/create` webhooks. |
+| `SHOPIFY_SCOPES` | Shopify | `read_orders,read_products` for order attribution and catalog eligibility. |
+| `SHOPIFY_WEBHOOK_SECRET` | Legacy only | Temporary fallback while migrating an existing deployment; native Shopify webhooks use `SHOPIFY_API_SECRET`. |
 | `STRIPE_SECRET_KEY` | Payouts | Stripe platform secret key for Connect transfers. |
 | `MAILGUN_API_KEY` | Email | Mailgun private API key. If unset, emails are logged to stdout. |
 | `MAILGUN_DOMAIN` | Email | Your verified Mailgun sending domain. |
@@ -110,6 +110,28 @@ mysql --host=<host> --user=<user> -p <database> < schema/schema.sql
 Table creation uses `IF NOT EXISTS` and is safe to re-run, but the index
 statements are not (MySQL has no `CREATE INDEX IF NOT EXISTS`) — only run
 this against an empty database.
+
+---
+
+## Shopify production checklist
+
+1. Create a Shopify app and configure its allowed redirection URL as
+   `https://<your-app-domain>/api/shopify/callback`.
+2. Set `NEXT_PUBLIC_APP_URL` to that same HTTPS domain, then set
+   `SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`, and `SHOPIFY_REDIRECT_URI` in the
+   host environment. Reconnect a store after changing scopes.
+3. Deploy `extensions/referly-attribution` with Shopify CLI as this app's theme
+   extension. In each connected store, activate **Affiliate attribution** in
+   **Online Store → Themes → Customize → App embeds**. This is what writes a
+   referral code into Shopify's cart before checkout.
+4. Place an order through a generated referral link and confirm the
+   `orders/create` webhook reaches `/api/webhooks/orders`. The endpoint accepts
+   only Shopify HMAC signatures made with `SHOPIFY_API_SECRET`.
+
+The app uses the supported Shopify Admin GraphQL API for product sync and
+webhook subscriptions. Accelerated checkout can bypass cart attributes; the
+webhook also falls back to the order landing URL, and never awards a commission
+when the affiliate, program, store, or attribution window cannot be verified.
 
 ---
 

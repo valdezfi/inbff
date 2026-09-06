@@ -2,31 +2,45 @@
  * Shopify Admin API helpers — fully multi-tenant.
  *
  * Every brand connects their own Shopify store via OAuth.
- * Each store gets its own webhook signing secret stored in shopify_stores.webhook_secret.
+ * Shopify signs native app webhooks with this app's client secret.
  *
  * - syncProducts:            fetches the full product catalog (paginated) and upserts into DB
- * - registerOrderWebhook:    registers the orders/create webhook on the store, stores its secret
- * - getWebhookSecret:        returns the per-store webhook secret (fallback: env SHOPIFY_WEBHOOK_SECRET)
+ * - registerOrderWebhook:    registers the orders/create webhook on the store
+ * - getWebhookSecret:        returns the Shopify app client secret
  * - verifyWebhookHmac:       verifies a webhook payload for a specific store
  */
-import { createHmac, randomBytes, timingSafeEqual } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { nanoid } from "nanoid";
 import { db } from "./db";
 import type { ShopifyStore } from "./types";
 
-interface ShopifyProductRaw {
-  id: number;
+const SHOPIFY_API_VERSION = "2026-07";
+
+interface ShopifyGraphqlProduct {
+  id: string;
   title: string;
   handle: string;
-  images: { src: string }[];
-  variants: { price: string }[];
+  featuredImage: { url: string } | null;
+  variants: { nodes: Array<{ price: { amount: string } }> };
 }
 
-interface ShopifyWebhook {
-  id: number;
-  topic: string;
-  address: string;
-  api_version: string;
+async function adminGraphql<T>(store: ShopifyStore, query: string, variables: Record<string, unknown>): Promise<T | null> {
+  if (!store.accessToken) return null;
+  const response = await fetch(`https://${store.shopDomain}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": store.accessToken },
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!response.ok) {
+    console.error(`[shopify] GraphQL request failed for ${store.shopDomain}:`, response.status, await response.text());
+    return null;
+  }
+  const payload = await response.json() as { data?: T; errors?: Array<{ message: string }> };
+  if (payload.errors?.length || !payload.data) {
+    console.error(`[shopify] GraphQL errors for ${store.shopDomain}:`, payload.errors?.map(error => error.message).join("; "));
+    return null;
+  }
+  return payload.data;
 }
 
 // ─── Product sync ─────────────────────────────────────────────────────────────
@@ -35,42 +49,38 @@ interface ShopifyWebhook {
 export async function syncProducts(store: ShopifyStore): Promise<number> {
   if (!store.accessToken) return 0;
 
-  let url: string | null =
-    `https://${store.shopDomain}/admin/api/2024-01/products.json` +
-    `?limit=250&fields=id,title,handle,images,variants`;
+  let cursor: string | null | undefined = null;
   let total = 0;
 
-  while (url) {
-    const res: Response = await fetch(url, {
-      headers: { "X-Shopify-Access-Token": store.accessToken },
-    });
-
-    if (!res.ok) {
-      console.error(`[shopify] product sync failed for ${store.shopDomain}:`, res.status, await res.text());
-      break;
-    }
-
-    const data = (await res.json()) as { products: ShopifyProductRaw[] };
-    const products = data.products ?? [];
+  while (cursor !== undefined) {
+    const data: {
+      products: {
+        nodes: ShopifyGraphqlProduct[];
+        pageInfo: { hasNextPage: boolean; endCursor: string | null };
+      };
+    } | null = await adminGraphql(store, `query SyncProducts($cursor: String) {
+      products(first: 100, after: $cursor) {
+        nodes { id title handle featuredImage { url } variants(first: 1) { nodes { price { amount } } } }
+        pageInfo { hasNextPage endCursor }
+      }
+    }`, { cursor });
+    if (!data) break;
+    const products = data.products.nodes;
 
     await db.upsertProducts(
       products.map((p) => ({
         id: nanoid(),
         storeId: store.id,
-        shopifyProductId: String(p.id),
+        shopifyProductId: p.id,
         title: p.title,
-        imageUrl: p.images[0]?.src ?? null,
-        price: p.variants[0] ? parseFloat(p.variants[0].price) : null,
+        imageUrl: p.featuredImage?.url ?? null,
+        price: p.variants.nodes[0] ? parseFloat(p.variants.nodes[0].price.amount) : null,
         handle: p.handle,
       }))
     );
 
     total += products.length;
-
-    // Follow Shopify Link-header pagination
-    const link: string | null = res.headers.get("Link");
-    const next: string | null = link?.match(/<([^>]+)>;\s*rel="next"/)?.[1] ?? null;
-    url = next;
+    cursor = data.products.pageInfo.hasNextPage ? data.products.pageInfo.endCursor : undefined;
   }
 
   console.log(`[shopify] synced ${total} products for ${store.shopDomain}`);
@@ -132,8 +142,8 @@ export async function syncUnifiedProducts(store: ShopifyStore): Promise<number> 
 
 /**
  * Register the orders/create webhook on the connected store.
- * Generates a cryptographically random secret per store and saves it to DB.
- * If the webhook already exists (422), fetches and returns the existing secret.
+ * Shopify owns webhook signature creation; subscriptions cannot define a
+ * custom signing secret.
  */
 export async function registerOrderWebhook(store: ShopifyStore): Promise<string | null> {
   if (!store.accessToken) return null;
@@ -144,90 +154,67 @@ export async function registerOrderWebhook(store: ShopifyStore): Promise<string 
     return null;
   }
 
-  // Generate a per-store webhook secret
-  const secret = randomBytes(32).toString("hex");
   const webhookAddress = `${appUrl}/api/webhooks/orders`;
 
-  const res = await fetch(
-    `https://${store.shopDomain}/admin/api/2024-01/webhooks.json`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Access-Token": store.accessToken,
-      },
-      body: JSON.stringify({
-        webhook: {
-          topic: "orders/create",
-          address: webhookAddress,
-          format: "json",
-          metafield_namespaces: ["affiliates"],
-        },
-      }),
-    }
-  );
+  const existing = await adminGraphql<{
+    webhookSubscriptions: { nodes: Array<{ id: string; uri: string }> };
+  }>(store, `query ExistingOrdersWebhooks($topics: [WebhookSubscriptionTopic!]) {
+    webhookSubscriptions(first: 100, topics: $topics) { nodes { id uri } }
+  }`, { topics: ["ORDERS_CREATE"] });
+  const existingSubscription = existing?.webhookSubscriptions.nodes[0];
+  if (existingSubscription?.uri === webhookAddress) return getWebhookSecret(store);
 
-  if (res.ok) {
-    // Save the newly generated secret to the store record
-    await db.upsertStore({ ...store, webhookSecret: secret });
-    console.log(`[shopify] registered webhook for ${store.shopDomain}`);
-    return secret;
-  }
-
-  if (res.status === 422) {
-    // Already registered — find the existing webhook and keep existing secret
-    console.log(`[shopify] webhook already registered for ${store.shopDomain}, fetching existing`);
-    await ensureWebhookUpdated(store, webhookAddress);
-    return store.webhookSecret ?? null;
-  }
-
-  console.error(`[shopify] webhook registration failed for ${store.shopDomain}:`, res.status, await res.text());
-  return null;
-}
-
-/** Update existing webhook address if app URL changed (e.g. new deployment). */
-async function ensureWebhookUpdated(store: ShopifyStore, webhookAddress: string): Promise<void> {
-  if (!store.accessToken) return;
-  try {
-    const listRes = await fetch(
-      `https://${store.shopDomain}/admin/api/2024-01/webhooks.json?topic=orders%2Fcreate`,
-      { headers: { "X-Shopify-Access-Token": store.accessToken } }
-    );
-    if (!listRes.ok) return;
-    const { webhooks } = await listRes.json() as { webhooks: ShopifyWebhook[] };
-    for (const wh of webhooks) {
-      if (wh.address !== webhookAddress) {
-        await fetch(
-          `https://${store.shopDomain}/admin/api/2024-01/webhooks/${wh.id}.json`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Shopify-Access-Token": store.accessToken,
-            },
-            body: JSON.stringify({ webhook: { id: wh.id, address: webhookAddress } }),
-          }
-        );
+  if (existingSubscription) {
+    const updated = await adminGraphql<{
+      webhookSubscriptionUpdate: { webhookSubscription: { id: string } | null; userErrors: Array<{ message: string }> };
+    }>(store, `mutation UpdateOrdersWebhook($id: ID!, $subscription: WebhookSubscriptionInput!) {
+      webhookSubscriptionUpdate(id: $id, webhookSubscription: $subscription) {
+        webhookSubscription { id }
+        userErrors { message }
       }
+    }`, { id: existingSubscription.id, subscription: { uri: webhookAddress } });
+    if (updated?.webhookSubscriptionUpdate.webhookSubscription && updated.webhookSubscriptionUpdate.userErrors.length === 0) {
+      console.log(`[shopify] updated webhook for ${store.shopDomain}`);
+      return getWebhookSecret(store);
     }
-  } catch (e) {
-    console.error("[shopify] ensureWebhookUpdated error:", e);
+    console.error(`[shopify] webhook update failed for ${store.shopDomain}:`, updated?.webhookSubscriptionUpdate.userErrors.map(error => error.message).join("; "));
+    return null;
   }
+
+  const data = await adminGraphql<{
+    webhookSubscriptionCreate: { webhookSubscription: { id: string } | null; userErrors: Array<{ message: string }> };
+  }>(store, `mutation CreateOrdersWebhook($topic: WebhookSubscriptionTopic!, $subscription: WebhookSubscriptionInput!) {
+    webhookSubscriptionCreate(topic: $topic, webhookSubscription: $subscription) {
+      webhookSubscription { id }
+      userErrors { message }
+    }
+  }`, {
+    topic: "ORDERS_CREATE",
+    subscription: { uri: webhookAddress },
+  });
+  const errors = data?.webhookSubscriptionCreate.userErrors ?? [];
+  if (!data?.webhookSubscriptionCreate.webhookSubscription || errors.length) {
+    console.error(`[shopify] webhook registration failed for ${store.shopDomain}:`, errors.map(error => error.message).join("; "));
+    return null;
+  }
+  console.log(`[shopify] registered webhook for ${store.shopDomain}`);
+  return getWebhookSecret(store);
 }
 
-// ─── Webhook HMAC verification (per-store) ────────────────────────────────────
+// ─── Webhook HMAC verification ───────────────────────────────────────────────
 
 /**
- * Returns the webhook secret for a specific store.
- * Priority: per-store secret in DB → fallback env SHOPIFY_WEBHOOK_SECRET.
+ * Shopify signs native app webhooks with the app client secret. Historical
+ * per-store values are deliberately ignored because Shopify never uses them.
  */
-export function getWebhookSecret(store: ShopifyStore): string | null {
-  return store.webhookSecret ?? process.env.SHOPIFY_WEBHOOK_SECRET ?? null;
+export function getWebhookSecret(_store: ShopifyStore): string | null {
+  void _store;
+  return process.env.SHOPIFY_API_SECRET ?? process.env.SHOPIFY_WEBHOOK_SECRET ?? null;
 }
 
 /**
  * Verify the X-Shopify-Hmac-Sha256 header for an incoming webhook.
- * Uses the per-store secret stored in the DB.
+ * Uses Shopify's app client secret.
  */
 export function verifyWebhookHmac(
   rawBody: Buffer,
@@ -260,5 +247,18 @@ export function verifyOAuthHmac(
     return timingSafeEqual(Buffer.from(digest), Buffer.from(hmac));
   } catch {
     return false;
+  }
+}
+
+export function decodeOAuthState(state: string): { nonce: string; shopDomain: string } | null {
+  try {
+    const value: unknown = JSON.parse(Buffer.from(state, "base64url").toString("utf-8"));
+    if (!value || typeof value !== "object") return null;
+    const { nonce, shopDomain } = value as Record<string, unknown>;
+    if (typeof nonce !== "string" || nonce.length < 16) return null;
+    if (typeof shopDomain !== "string" || !/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shopDomain)) return null;
+    return { nonce, shopDomain };
+  } catch {
+    return null;
   }
 }
