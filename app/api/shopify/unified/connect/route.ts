@@ -37,9 +37,13 @@ export async function POST(req: NextRequest) {
   const callbackUrl      = `${appUrl}/api/shopify/unified/callback`;
   const errorRedirectUrl = `${appUrl}/dashboard/connect-shopify?error=unified-integration-disabled`;
 
+  // external_xref = your internal userId so Unified.to associates the
+  // Shopify connection with the correct brand account in their system.
+  // This is what Unified.to calls the "External user identifier".
   const redirectUrl =
     `https://api.unified.to/unified/integration/auth/${workspaceId}/shopify` +
     `?redirect=true` +
+    `&external_xref=${encodeURIComponent(session.userId)}` +
     `&success_redirect=${encodeURIComponent(`${callbackUrl}?state=${state}`)}` +
     `&failure_redirect=${encodeURIComponent(errorRedirectUrl)}` +
     `&error_redirect=${encodeURIComponent(errorRedirectUrl)}`;
