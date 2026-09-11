@@ -164,7 +164,7 @@ export async function createUser(user: Omit<User, 'createdAt'>): Promise<User> {
      VALUES (?,?,?,?,?,?,?,?,?)`,
     [user.id, user.email, user.passwordHash, user.name, user.role,
      user.emailVerified ? 1 : 0, user.verificationToken,
-     user.verificationTokenExpiry, user.stripeAccountId]
+     user.verificationTokenExpiry ? new Date(user.verificationTokenExpiry) : null, user.stripeAccountId]
   );
   return (await findUserById(user.id))!;
 }
@@ -190,7 +190,7 @@ export async function updateVerificationToken(userId: string, token: string, exp
     });
     return;
   }
-  await exec(`UPDATE users SET verification_token=?, verification_token_expiry=? WHERE id=?`, [token, expiry, userId]);
+  await exec(`UPDATE users SET verification_token=?, verification_token_expiry=? WHERE id=?`, [token, expiry ? new Date(expiry) : null, userId]);
 }
 
 export async function updateUserRole(userId: string, role: UserRole): Promise<void> {
