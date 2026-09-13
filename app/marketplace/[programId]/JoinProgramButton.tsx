@@ -15,61 +15,58 @@ export default function JoinProgramButton({
   appUrl: string; isLoggedIn: boolean;
 }) {
   const router = useRouter();
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState<string | null>(null);
-  const [pitch, setPitch]         = useState("");
-  const [done, setDone]           = useState<{ code?: string; status: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState<string | null>(null);
+  const [pitch,   setPitch]   = useState("");
+  const [done,    setDone]    = useState<{ code?: string; status: string } | null>(null);
 
-  // Already a member
   if (existingCode) {
-    const url = `${appUrl}/r/${existingCode}`;
     return (
       <div className="space-y-3">
-        <p className="text-sm text-emerald-400 font-medium text-center">✓ You're already in this program</p>
-        <CopyField value={url} dark />
+        <p className="text-sm text-emerald-700 font-medium text-center">✓ You&apos;re already in this program</p>
+        <CopyField value={`${appUrl}/r/${existingCode}`} />
       </div>
     );
   }
 
-  // Already applied
   if (existingStatus === "pending") {
     return (
-      <div className="rounded-none bg-amber-500/10 border border-amber-500/20 px-4 py-3 text-sm text-amber-300 text-center flex items-center justify-center gap-2">
+      <div className="border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 text-center flex items-center justify-center gap-2">
         <Clock className="h-4 w-4" /> Application pending review
       </div>
     );
   }
+
   if (existingStatus === "rejected") {
-    return <div className="rounded-none bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400 text-center">Application was not approved</div>;
+    return <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 text-center">Application was not approved</div>;
   }
 
   if (!isLoggedIn) {
     return (
       <Link href={`/signup?role=creator&next=/marketplace/${programId}`}
-        className="w-full inline-flex items-center justify-center gap-2 rounded-none bg-gradient-to-r from-purple-500 to-blue-500 px-5 py-3 text-sm font-semibold text-white hover:brightness-110 transition-all">
+        className="w-full inline-flex items-center justify-center gap-2 bg-[#006cd2] px-5 py-3 text-sm font-semibold text-white hover:bg-[#005aac] transition-all">
         {programType === "open" ? "Join & get your link" : "Apply to this program"}
         <ArrowRight className="h-4 w-4" />
       </Link>
     );
   }
 
-  // Post-action success
   if (done) {
     if (done.code) {
-      const url = `${appUrl}/r/${done.code}`;
       return (
         <div className="space-y-3 animate-fade-in-up">
-          <p className="text-sm text-emerald-400 font-medium text-center">🎉 You're in! Here's your link:</p>
-          <CopyField value={url} dark />
-          <button onClick={() => router.push("/affiliate/dashboard")} className="w-full text-xs text-center text-white/40 hover:text-white/60 transition-colors">
+          <p className="text-sm text-emerald-700 font-medium text-center">🎉 You&apos;re in! Here&apos;s your link:</p>
+          <CopyField value={`${appUrl}/r/${done.code}`} />
+          <button onClick={() => router.push("/affiliate/dashboard")}
+            className="w-full text-xs text-center text-[#6b7378] hover:text-[#006cd2] transition-colors">
             Go to your dashboard →
           </button>
         </div>
       );
     }
     return (
-      <div className="rounded-none bg-blue-500/10 border border-blue-500/20 px-4 py-3 text-sm text-blue-300 text-center">
-        ✓ Application submitted — you'll hear back by email.
+      <div className="border border-[#006cd2]/20 bg-[#f0f7ff] px-4 py-3 text-sm text-[#006cd2] text-center">
+        ✓ Application submitted — you&apos;ll hear back by email.
       </div>
     );
   }
@@ -95,21 +92,21 @@ export default function JoinProgramButton({
     <div className="space-y-3">
       {programType === "approval" && (
         <div>
-          <label className="block text-xs text-white/50 mb-1.5">Why do you want to join? (optional)</label>
-          <textarea
-            value={pitch} onChange={e => setPitch(e.target.value)} maxLength={200} rows={3}
+          <label className="block text-xs text-[#6b7378] mb-1.5">Why do you want to join? (optional)</label>
+          <textarea value={pitch} onChange={e => setPitch(e.target.value)} maxLength={200} rows={3}
             placeholder="Tell the store owner a bit about your audience…"
-            className="w-full rounded-none border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-blue-500/60 focus:outline-none resize-none"
-          />
-          <p className="text-right text-[10px] text-white/30 mt-1">{pitch.length}/200</p>
+            className="w-full border border-[#e4e8ed] bg-white px-3 py-2.5 text-sm text-[#0a0a0a] placeholder:text-[#6b7378] focus:border-[#006cd2] focus:outline-none resize-none" />
+          <p className="text-right text-[10px] text-[#6b7378] mt-1">{pitch.length}/200</p>
         </div>
       )}
-      {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+      {error && <p className="text-sm text-red-600 text-center">{error}</p>}
       <button onClick={handleJoin} disabled={loading}
-        className="w-full inline-flex items-center justify-center gap-2 rounded-none bg-gradient-to-r from-purple-500 to-blue-500 px-5 py-3 text-sm font-semibold text-white hover:brightness-110 transition-all disabled:opacity-60">
-        {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Processing…</>
-          : programType === "open" ? <><Copy className="h-4 w-4" /> Get my referral link</>
-          : <><ArrowRight className="h-4 w-4" /> Apply to {programName}</>}
+        className="w-full inline-flex items-center justify-center gap-2 bg-[#006cd2] px-5 py-3 text-sm font-semibold text-white hover:bg-[#005aac] transition-all disabled:opacity-60">
+        {loading
+          ? <><Loader2 className="h-4 w-4 animate-spin" /> Processing…</>
+          : programType === "open"
+            ? <><Copy className="h-4 w-4" /> Get my referral link</>
+            : <><ArrowRight className="h-4 w-4" /> Apply to {programName}</>}
       </button>
     </div>
   );

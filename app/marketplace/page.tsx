@@ -8,8 +8,8 @@ import { Search, SlidersHorizontal, Users, Clock, TrendingUp, ArrowRight, Tag } 
 import type { MarketplaceProgram } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "Marketplace — inBFF",
-  description: "Browse affiliate programs and start earning commissions.",
+  title: "Marketplace — Referly",
+  description: "Browse affiliate programs from Shopify brands and start earning commissions.",
 };
 
 const CATEGORIES = ["All", "Fashion", "Tech", "Health", "Beauty", "Home", "Food", "Other"];
@@ -59,7 +59,7 @@ export default async function MarketplacePage({
       {/* Header */}
       <div className="pt-24 pb-12 border-b border-[#e4e8ed]">
         <div className="mx-auto max-w-6xl px-6">
-          <p className="font-mono text-xs uppercase tracking-widest text-[#3B82F6] mb-3">Marketplace</p>
+          <p className="font-mono text-xs uppercase tracking-widest text-[#006cd2] mb-3">Marketplace</p>
           <h1 className="text-3xl font-bold tracking-tight md:text-5xl">Find a program to promote</h1>
           <p className="mt-4 text-[#6b7378] max-w-xl">
             {stats.totalPrograms} live programs · {stats.totalAffiliates.toLocaleString()} affiliates earning · ${stats.totalPaid.toLocaleString(undefined, { maximumFractionDigits: 0 })} paid out
@@ -75,7 +75,7 @@ export default async function MarketplacePage({
                 className="flex-1 bg-transparent text-sm text-[#0a0a0a] placeholder:text-[#6b7378] focus:outline-none"
               />
             </div>
-            <button type="submit" className="rounded-none bg-[#3B82F6] px-5 py-3 text-sm font-semibold text-[#0a0a0a] hover:bg-[#2563eb] transition-colors">
+            <button type="submit" className="rounded-none bg-[#006cd2] px-5 py-3 text-sm font-semibold text-[#0a0a0a] hover:bg-[#005aac] transition-colors">
               Search
             </button>
           </form>
@@ -94,7 +94,7 @@ export default async function MarketplacePage({
               <div className="space-y-1">
                 {CATEGORIES.map(cat => (
                   <Link key={cat} href={buildUrl({ category: cat, page: 1 })}
-                    className={`block rounded-none px-3 py-2 text-sm transition-colors ${currentCat === cat ? "bg-[#3B82F6]/15 text-[#3B82F6] font-medium" : "text-[#6b7378] hover:text-[#006cd2] hover:bg-[#f0f7ff]"}`}>
+                    className={`block rounded-none px-3 py-2 text-sm transition-colors ${currentCat === cat ? "bg-[#006cd2]/15 text-[#006cd2] font-medium" : "text-[#6b7378] hover:text-[#006cd2] hover:bg-[#f0f7ff]"}`}>
                     {cat}
                   </Link>
                 ))}
@@ -108,7 +108,7 @@ export default async function MarketplacePage({
               <div className="space-y-1">
                 {SORT_OPTIONS.map(opt => (
                   <Link key={opt.value} href={buildUrl({ sort: opt.value, page: 1 })}
-                    className={`block rounded-none px-3 py-2 text-sm transition-colors ${sort === opt.value ? "bg-[#3B82F6]/15 text-[#3B82F6] font-medium" : "text-[#6b7378] hover:text-[#006cd2] hover:bg-[#f0f7ff]"}`}>
+                    className={`block rounded-none px-3 py-2 text-sm transition-colors ${sort === opt.value ? "bg-[#006cd2]/15 text-[#006cd2] font-medium" : "text-[#6b7378] hover:text-[#006cd2] hover:bg-[#f0f7ff]"}`}>
                     {opt.label}
                   </Link>
                 ))}
@@ -120,7 +120,7 @@ export default async function MarketplacePage({
               <div className="space-y-1">
                 {[["", "All types"], ["open", "Open — instant join"], ["approval", "Approval-based"]].map(([val, label]) => (
                   <Link key={val} href={buildUrl({ type: val || undefined, page: 1 })}
-                    className={`block rounded-none px-3 py-2 text-sm transition-colors ${(type ?? "") === val ? "bg-[#3B82F6]/15 text-[#3B82F6] font-medium" : "text-[#6b7378] hover:text-[#006cd2] hover:bg-[#f0f7ff]"}`}>
+                    className={`block rounded-none px-3 py-2 text-sm transition-colors ${(type ?? "") === val ? "bg-[#006cd2]/15 text-[#006cd2] font-medium" : "text-[#6b7378] hover:text-[#006cd2] hover:bg-[#f0f7ff]"}`}>
                     {label}
                   </Link>
                 ))}
@@ -137,7 +137,7 @@ export default async function MarketplacePage({
             {programs.length === 0 ? (
               <div className="rounded-none border border-[#e4e8ed] p-16 text-center">
                 <p className="text-[#6b7378]">No programs match your filters.</p>
-                <Link href="/marketplace" className="mt-4 inline-block text-sm text-[#3B82F6] hover:text-blue-300">Clear filters</Link>
+                <Link href="/marketplace" className="mt-4 inline-block text-sm text-[#006cd2] hover:text-[#005aac]">Clear filters</Link>
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
@@ -175,7 +175,7 @@ function ProgramCard({ program }: { program: MarketplaceProgram }) {
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex-1 min-w-0">
           <p className="text-xs text-[#6b7378] truncate">{program.shopDomain}</p>
-          <h3 className="font-semibold text-[#0a0a0a] text-base leading-snug mt-0.5 group-hover:text-[#3B82F6] transition-colors">{program.name}</h3>
+          <h3 className="font-semibold text-[#0a0a0a] text-base leading-snug mt-0.5 group-hover:text-[#006cd2] transition-colors">{program.name}</h3>
         </div>
         <span className={`shrink-0 rounded-none px-2.5 py-1 text-[11px] font-medium ${program.programType === "open" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"}`}>
           {program.programType === "open" ? "Open" : "Apply"}
@@ -194,7 +194,7 @@ function ProgramCard({ program }: { program: MarketplaceProgram }) {
           <span className="flex items-center gap-1"><Users className="h-3 w-3" />{program.affiliateCount}</span>
           <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{program.attributionWindowDays}d</span>
         </div>
-        <span className="flex items-center gap-1 text-[#3B82F6] group-hover:gap-2 transition-all">
+        <span className="flex items-center gap-1 text-[#006cd2] group-hover:gap-2 transition-all">
           View <ArrowRight className="h-3.5 w-3.5" />
         </span>
       </div>
