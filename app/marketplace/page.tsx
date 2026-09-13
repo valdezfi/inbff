@@ -8,7 +8,7 @@ import { Search, SlidersHorizontal, Users, Clock, TrendingUp, ArrowRight, Tag } 
 import type { MarketplaceProgram } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "Marketplace — Referly",
+  title: "Marketplace — inBFF",
   description: "Browse affiliate programs from Shopify brands and start earning commissions.",
 };
 

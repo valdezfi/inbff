@@ -71,7 +71,7 @@ export default function AffiliateShell({ children, userName, userEmail, role }: 
       <div className="flex h-14 items-center gap-3 px-5 border-b border-white/10">
         <div className="text-white"><LogoMark /></div>
         <div>
-          <span className="font-bold text-white tracking-tight text-sm">Referly</span>
+          <span className="font-bold text-white tracking-tight text-sm">inBFF</span>
           <span className="ml-2 px-1.5 py-0.5 text-[9px] font-semibold text-white/60 uppercase tracking-wider border border-white/20">
             Creator
           </span>

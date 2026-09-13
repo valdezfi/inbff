@@ -15,7 +15,7 @@ const cols = [
     links: [
       { label: "About",   href: "#" },
       { label: "Blog",    href: "#" },
-      { label: "Contact", href: "mailto:hello@referly.app" },
+      { label: "Contact", href: "mailto:hello@inbff.app" },
     ],
   },
   {
@@ -48,7 +48,7 @@ export function Footer() {
         <div className="max-w-xs">
           <Link href="/" className="flex items-center gap-2.5 font-bold text-base text-[#0a0a0a]">
             <LogoMark />
-            Referly
+            inBFF
           </Link>
           <p className="mt-4 text-sm text-[#6b7378] leading-relaxed">
             Shopify affiliate programs, fully automated. Track clicks, attribute orders, pay creators — all in one place.
@@ -73,7 +73,7 @@ export function Footer() {
 
       <div className="border-t border-[#e4e8ed]">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-5">
-          <div className="text-xs text-[#6b7378]">© {new Date().getFullYear()} Referly. All rights reserved.</div>
+          <div className="text-xs text-[#6b7378]">© {new Date().getFullYear()} inBFF. All rights reserved.</div>
           <div className="text-xs text-[#6b7378]">Built for Shopify store owners & creators.</div>
         </div>
       </div>

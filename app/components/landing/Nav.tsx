@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { Menu, X, LogOut } from "lucide-react";
 
 const links = [
-  { label: "Platform",    href: "#" },
-  { label: "How it works",href: "#" },
-  { label: "Marketplace", href: "/marketplace" },
-  { label: "Pricing",     href: "#" },
+  { label: "Platform",     href: "/platform" },
+  { label: "How it works", href: "/how-it-works" },
+  { label: "Marketplace",  href: "/marketplace" },
+  { label: "Pricing",      href: "/pricing" },
 ];
 
 interface MeUser { id: string; name: string; email: string; role: string; }
@@ -71,7 +71,7 @@ export function Nav({ initialUser }: { initialUser?: MeUser | null }) {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 font-bold text-base tracking-tight text-[#0a0a0a]">
           <LogoMark size={22} />
-          Referly
+          inBFF
         </Link>
 
         {/* Desktop nav */}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Referly — Affiliate Platform for Shopify Brands",
+  title: "inBFF — Affiliate Platform for Shopify Brands",
   description: "Launch a fully automated affiliate program for your Shopify store. Track every click, attribute every order, and pay creators automatically.",
 };
 

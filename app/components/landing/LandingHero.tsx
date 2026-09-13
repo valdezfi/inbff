@@ -12,7 +12,7 @@ function ArrowIcon({ className = "" }: { className?: string }) {
 
 function Logo() {
   return (
-    <a href="#" aria-label="Referly" className="logo" style={{ display: "inline-block", lineHeight: 0 }}>
+    <a href="#" aria-label="inBFF" className="logo" style={{ display: "inline-block", lineHeight: 0 }}>
       <svg
         viewBox="0 0 42 34"
         aria-hidden="true"
@@ -47,10 +47,10 @@ export default function LandingHero({ isLoggedIn }: { isLoggedIn?: boolean }) {
   }
 
   const navLinks = [
-    { label: "Platform", href: "#" },
-    { label: "How it Works", href: "#" },
-    { label: "Marketplace", href: "/marketplace" },
-    { label: "Pricing", href: "#" },
+    { label: "Platform",     href: "/platform" },
+    { label: "How it Works", href: "/how-it-works" },
+    { label: "Marketplace",  href: "/marketplace" },
+    { label: "Pricing",      href: "/pricing" },
   ];
 
   return (
@@ -541,7 +541,7 @@ export default function LandingHero({ isLoggedIn }: { isLoggedIn?: boolean }) {
         {/* Lede */}
         <p className="lp-lede">
           <span className="lp-lede__rise">
-            Referly lets any Shopify brand launch a fully automated affiliate program in minutes — connect your store, set your commission rate, and let creators drive sales while you track every click, order, and payout in one dashboard.
+            inBFF lets any Shopify brand launch a fully automated affiliate program in minutes — connect your store, set your commission rate, and let creators drive sales while you track every click, order, and payout in one dashboard.
           </span>
         </p>
       </div>

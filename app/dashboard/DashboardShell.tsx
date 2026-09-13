@@ -71,7 +71,7 @@ export default function DashboardShell({ children, userName, userEmail }: {
       <div className="flex h-14 items-center gap-3 px-5 border-b border-white/10">
         <div className="text-white"><LogoMark /></div>
         <div>
-          <span className="font-bold text-white tracking-tight text-sm">Referly</span>
+          <span className="font-bold text-white tracking-tight text-sm">inBFF</span>
           <span className="ml-2 px-1.5 py-0.5 text-[9px] font-semibold text-white/60 uppercase tracking-wider border border-white/20">
             Brand
           </span>
@@ -101,7 +101,7 @@ export default function DashboardShell({ children, userName, userEmail }: {
 
       {/* Bottom */}
       <div className="p-2 border-t border-white/10 space-y-0.5">
-        <a href="mailto:support@referly.app"
+        <a href="mailto:support@inbff.app"
           className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-white/50 hover:bg-white/8 hover:text-white/80 transition-all">
           <HelpCircle className="h-4 w-4" />Help & Support
         </a>

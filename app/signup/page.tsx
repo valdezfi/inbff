@@ -78,14 +78,14 @@ function SignupInner() {
         {/* Logo */}
         <Link href="/" className="inline-flex items-center gap-2.5 mb-10">
           <LogoMark />
-          <span className="font-bold text-[#0a0a0a] tracking-tight text-lg">Referly</span>
+          <span className="font-bold text-[#0a0a0a] tracking-tight text-lg">inBFF</span>
         </Link>
 
         {/* Step 1: Role */}
         {step === "role" && (
           <div>
             <h1 className="text-2xl font-bold text-[#0a0a0a] mb-1 tracking-tight">Create your account</h1>
-            <p className="text-sm text-[#6b7378] mb-8">How do you want to use Referly?</p>
+            <p className="text-sm text-[#6b7378] mb-8">How do you want to use inBFF?</p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
               {ROLES.map((r) => {

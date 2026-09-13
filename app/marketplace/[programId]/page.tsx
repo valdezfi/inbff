@@ -13,9 +13,9 @@ type Ctx = { params: Promise<{ programId: string }> };
 export async function generateMetadata({ params }: Ctx): Promise<Metadata> {
   const { programId } = await params;
   const program = await db.findProgramById(programId);
-  if (!program) return { title: "Program not found — Referly" };
+  if (!program) return { title: "Program not found — inBFF" };
   return {
-    title: `${program.name} — Referly Marketplace`,
+    title: `${program.name} — inBFF Marketplace`,
     description: program.description ?? `Earn ${program.commissionRate}% commission promoting ${program.name}.`,
   };
 }

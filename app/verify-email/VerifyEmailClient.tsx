@@ -74,7 +74,7 @@ export default function VerifyEmailClient() {
       <div className="w-full max-w-sm animate-fade-in-up">
         <Link href="/" className="inline-flex items-center gap-2.5 mb-10">
           <LogoMark />
-          <span className="font-bold text-[#0a0a0a] tracking-tight text-lg">Referly</span>
+          <span className="font-bold text-[#0a0a0a] tracking-tight text-lg">inBFF</span>
         </Link>
 
         <div className="border border-[#e4e8ed] bg-white p-8 text-center">

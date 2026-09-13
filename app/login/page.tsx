@@ -61,11 +61,11 @@ function LoginInner() {
         {/* Logo */}
         <Link href="/" className="inline-flex items-center gap-2.5 mb-10">
           <LogoMark />
-          <span className="font-bold text-[#0a0a0a] tracking-tight text-lg">Referly</span>
+          <span className="font-bold text-[#0a0a0a] tracking-tight text-lg">inBFF</span>
         </Link>
 
         <h1 className="text-2xl font-bold text-[#0a0a0a] mb-1 tracking-tight">Welcome back</h1>
-        <p className="text-sm text-[#6b7378] mb-8">Sign in to your Referly account.</p>
+        <p className="text-sm text-[#6b7378] mb-8">Sign in to your inBFF account.</p>
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div>

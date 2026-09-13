@@ -34,7 +34,7 @@ export default async function JoinProgramPage({ params }: { params: Promise<{ pr
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2.5 font-bold text-lg text-[#0a0a0a]">
             <LogoMark />
-            Referly
+            inBFF
           </Link>
         </div>
 
@@ -84,7 +84,7 @@ export default async function JoinProgramPage({ params }: { params: Promise<{ pr
         </div>
 
         <p className="text-center text-xs text-[#6b7378] mt-5">
-          Powered by Referly · Free for affiliates
+          Powered by inBFF · Free for affiliates
         </p>
       </div>
     </main>
