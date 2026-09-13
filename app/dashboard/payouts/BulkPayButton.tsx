@@ -43,7 +43,7 @@ export default function BulkPayButton({ programId, pendingCount }: {
       <button
         onClick={handleBulkPay}
         disabled={loading}
-        className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition-all disabled:opacity-60 shadow-sm shadow-indigo-200"
+        className="inline-flex items-center gap-1.5 rounded-none bg-[#006cd2] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#0053a3] transition-all disabled:opacity-60 shadow-sm "
       >
         {loading ? (
           <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Paying {pendingCount}…</>

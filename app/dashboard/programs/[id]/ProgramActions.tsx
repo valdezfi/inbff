@@ -30,7 +30,7 @@ export default function ProgramActions({
         <button
           onClick={() => patch("active")}
           disabled={!!loading}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-none border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-60"
         >
           {loading === "active" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
           Publish
@@ -40,7 +40,7 @@ export default function ProgramActions({
         <button
           onClick={() => patch("paused")}
           disabled={!!loading}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-none border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-60"
         >
           {loading === "paused" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pause className="h-3.5 w-3.5" />}
           Pause
@@ -50,7 +50,7 @@ export default function ProgramActions({
         <button
           onClick={() => patch("active")}
           disabled={!!loading}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-none border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-60"
         >
           {loading === "active" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
           Resume

@@ -40,7 +40,7 @@ export default async function AffiliateDashboard() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] text-center stagger">
         <div className="relative mb-8">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 shadow-xl shadow-sky-200">
+          <div className="flex h-20 w-20 items-center justify-center rounded-none bg-gradient-to-br bg-[#006cd2] shadow-xl ">
             <Sparkles className="h-9 w-9 text-white" />
           </div>
         </div>
@@ -50,7 +50,7 @@ export default async function AffiliateDashboard() {
         </p>
         <Link
           href="/marketplace"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-200 hover:brightness-105 transition-all"
+          className="inline-flex items-center gap-2 rounded-none bg-gradient-to-r bg-[#006cd2] px-6 py-3 text-sm font-semibold text-white shadow-lg  hover:opacity-90 transition-all"
         >
           <Plus className="h-4 w-4" />
           Browse marketplace
@@ -61,7 +61,7 @@ export default async function AffiliateDashboard() {
             { n: "Real-time",label: "click tracking" },
             { n: "Fast",     label: "commission payouts" },
           ].map((s) => (
-            <div key={s.label} className="rounded-2xl border border-slate-200 bg-white p-5 text-center card-shadow">
+            <div key={s.label} className="rounded-none border border-slate-200 bg-white p-5 text-center card-shadow">
               <p className="text-sm font-bold text-slate-900">{s.n}</p>
               <p className="text-xs text-slate-500 mt-1">{s.label}</p>
             </div>
@@ -72,8 +72,8 @@ export default async function AffiliateDashboard() {
   }
 
   const stats = [
-    { label: "Total Clicks",      value: totalClicks.toLocaleString(), icon: MousePointer, iconColor: "text-sky-600",    iconBg: "bg-sky-100",    gradClass: "stat-sky" },
-    { label: "Orders Attributed", value: totalOrders,                   icon: ShoppingBag,  iconColor: "text-violet-600", iconBg: "bg-violet-100", gradClass: "stat-violet" },
+    { label: "Total Clicks",      value: totalClicks.toLocaleString(), icon: MousePointer, iconColor: "text-[#006cd2]",    iconBg: "bg-[#d0e9f7]",    gradClass: "stat-indigo" },
+    { label: "Orders Attributed", value: totalOrders,                   icon: ShoppingBag,  iconColor: "text-[#006cd2]", iconBg: "bg-[#d0e7f7]", gradClass: "stat-indigo" },
     { label: "Pending Earnings",  value: `$${totalPending.toFixed(2)}`, icon: TrendingUp,   iconColor: "text-amber-600",  iconBg: "bg-amber-100",  gradClass: "stat-amber" },
     { label: "Total Paid Out",    value: `$${totalPaid.toFixed(2)}`,    icon: DollarSign,   iconColor: "text-emerald-600",iconBg: "bg-emerald-100",gradClass: "stat-emerald" },
   ];
@@ -90,7 +90,7 @@ export default async function AffiliateDashboard() {
         </div>
         <Link
           href="/marketplace"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-sky-200 hover:brightness-105 transition-all"
+          className="inline-flex items-center gap-2 rounded-none bg-gradient-to-r bg-[#006cd2] px-4 py-2.5 text-sm font-semibold text-white shadow-md  hover:opacity-90 transition-all"
         >
           <Plus className="h-4 w-4" />
           Find programs
@@ -100,8 +100,8 @@ export default async function AffiliateDashboard() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className={`rounded-2xl border border-slate-200/80 p-5 card-shadow ${s.gradClass}`}>
-            <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${s.iconBg} mb-4`}>
+          <div key={s.label} className={`rounded-none border border-slate-200/80 p-5 card-shadow ${s.gradClass}`}>
+            <div className={`inline-flex h-10 w-10 items-center justify-center rounded-none ${s.iconBg} mb-4`}>
               <s.icon className={`h-5 w-5 ${s.iconColor}`} />
             </div>
             <p className="text-2xl font-bold text-slate-900 tracking-tight">{s.value}</p>
@@ -113,24 +113,24 @@ export default async function AffiliateDashboard() {
       {/* Quick links + recent activity */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Quick actions */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 card-shadow">
+        <div className="rounded-none border border-slate-200/80 bg-white p-6 card-shadow">
           <div className="flex items-center gap-2 mb-5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50">
-              <Sparkles className="h-4 w-4 text-sky-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-none bg-[#e8f4fb]">
+              <Sparkles className="h-4 w-4 text-[#006cd2]" />
             </div>
             <h2 className="text-sm font-bold text-slate-700">Quick Actions</h2>
           </div>
           <div className="space-y-2">
             {[
-              { label: "Browse marketplace",  href: "/marketplace",        gradient: "from-sky-50 to-blue-50",     text: "text-sky-700",    hover: "hover:from-sky-100 hover:to-blue-100" },
-              { label: "My programs & links", href: "/affiliate/programs", gradient: "from-indigo-50 to-violet-50",text: "text-indigo-700", hover: "hover:from-indigo-100 hover:to-violet-100" },
-              { label: "View earnings",       href: "/affiliate/earnings", gradient: "from-amber-50 to-orange-50", text: "text-amber-700",  hover: "hover:from-amber-100 hover:to-orange-100" },
-              { label: "Request a payout",    href: "/affiliate/payouts",  gradient: "from-emerald-50 to-teal-50", text: "text-emerald-700",hover: "hover:from-emerald-100 hover:to-teal-100" },
+              { label: "Browse marketplace",  href: "/marketplace",        gradient: "from-[#e8f4fb] to-blue-50",     text: "text-[#0053a3]",    hover: "hover:from-[#d0e9f7] hover:to-blue-100" },
+              { label: "My programs & links", href: "/affiliate/programs", gradient: "from-[#e8f2fb] to-[#e8f2fb]",text: "text-[#0053a3]", hover: "hover:from-[#d0e7f7] hover:to-[#d0e7f7]" },
+              { label: "View earnings",       href: "/affiliate/earnings", gradient: "from-amber-50 to-amber-50", text: "text-amber-700",  hover: "hover:from-amber-100 hover:to-amber-100" },
+              { label: "Request a payout",    href: "/affiliate/payouts",  gradient: "from-emerald-50 to-emerald-50", text: "text-emerald-700",hover: "hover:from-emerald-100 hover:to-emerald-100" },
             ].map((a) => (
               <Link
                 key={a.href}
                 href={a.href}
-                className={`flex items-center justify-between rounded-xl bg-gradient-to-r ${a.gradient} ${a.hover} px-4 py-3 text-xs font-semibold ${a.text} transition-all`}
+                className={`flex items-center justify-between rounded-none bg-gradient-to-r ${a.gradient} ${a.hover} px-4 py-3 text-xs font-semibold ${a.text} transition-all`}
               >
                 {a.label}
                 <ChevronRight className="h-3.5 w-3.5 opacity-60" />
@@ -140,16 +140,16 @@ export default async function AffiliateDashboard() {
         </div>
 
         {/* Recent activity */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden card-shadow">
+        <div className="rounded-none border border-slate-200/80 bg-white overflow-hidden card-shadow">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
             <h2 className="text-sm font-bold text-slate-700">Recent Activity</h2>
-            <Link href="/affiliate/earnings" className="text-xs text-sky-600 hover:text-sky-700 font-medium flex items-center gap-1">
+            <Link href="/affiliate/earnings" className="text-xs text-[#006cd2] hover:text-[#0053a3] font-medium flex items-center gap-1">
               View all <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
           {recentActivity.length === 0 ? (
             <div className="px-6 py-10 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 mx-auto mb-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-none bg-slate-100 mx-auto mb-3">
                 <TrendingUp className="h-5 w-5 text-slate-400" />
               </div>
               <p className="text-sm text-slate-500 font-medium">No activity yet</p>
@@ -160,7 +160,7 @@ export default async function AffiliateDashboard() {
               {recentActivity.slice(0, 6).map((a, i) => (
                 <div key={i} className="flex items-center justify-between px-6 py-3.5 hover:bg-slate-50/80 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-full ${a.status === "paid" ? "bg-emerald-100" : "bg-amber-100"}`}>
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-none ${a.status === "paid" ? "bg-emerald-100" : "bg-amber-100"}`}>
                       {a.status === "paid"
                         ? <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                         : <Clock className="h-4 w-4 text-amber-600" />

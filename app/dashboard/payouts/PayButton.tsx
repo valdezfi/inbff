@@ -11,7 +11,7 @@ export default function PayButton({ commissionId }: { commissionId: string }) {
 
   if (done) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+      <span className="inline-flex items-center gap-1 rounded-none bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
         <Check className="h-3 w-3" /> Paid
       </span>
     );
@@ -39,7 +39,7 @@ export default function PayButton({ commissionId }: { commissionId: string }) {
             setLoading(false);
           }
         }}
-        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-all disabled:opacity-50 shadow-sm card-shadow"
+        className="inline-flex items-center gap-1.5 rounded-none border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#80bae6] hover:bg-[#e8f2fb] hover:text-[#0053a3] transition-all disabled:opacity-50 shadow-sm card-shadow"
       >
         {loading ? (
           <>

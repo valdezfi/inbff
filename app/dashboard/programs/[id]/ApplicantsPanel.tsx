@@ -34,7 +34,7 @@ export default function ApplicantsPanel({ programId, initialCount }: { programId
   if (initialCount === 0 && apps.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
+    <div className="rounded-none border border-amber-200 bg-amber-50 overflow-hidden">
       <button onClick={() => setOpen(v => !v)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-amber-100 transition-colors">
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-amber-600" />
@@ -60,12 +60,12 @@ export default function ApplicantsPanel({ programId, initialCount }: { programId
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={() => handle(app.id, "approve")} disabled={acting === app.id}
-                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 transition-colors disabled:opacity-60">
+                    className="inline-flex items-center gap-1 rounded-none bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 transition-colors disabled:opacity-60">
                     {acting === app.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
                     Approve
                   </button>
                   <button onClick={() => handle(app.id, "reject")} disabled={acting === app.id}
-                    className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60">
+                    className="inline-flex items-center gap-1 rounded-none border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60">
                     {acting === app.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
                     Reject
                   </button>

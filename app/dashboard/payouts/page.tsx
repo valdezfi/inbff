@@ -42,7 +42,7 @@ export default async function PayoutsPage() {
 
       {/* Stripe notice */}
       {!isStripeConfigured && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 flex items-start gap-3">
+        <div className="rounded-none border border-amber-200 bg-amber-50 px-5 py-4 flex items-start gap-3">
           <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-amber-800">Stripe not configured</p>
@@ -56,12 +56,12 @@ export default async function PayoutsPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 card-shadow stat-amber">
+        <div className="rounded-none border border-slate-200/80 bg-white p-6 card-shadow stat-amber">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
+            <div className="flex h-10 w-10 items-center justify-center rounded-none bg-amber-100">
               <Clock className="h-5 w-5 text-amber-600" />
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-500 bg-amber-100 rounded-full px-2 py-0.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-500 bg-amber-100 rounded-none px-2 py-0.5">
               Pending
             </span>
           </div>
@@ -69,12 +69,12 @@ export default async function PayoutsPage() {
           <p className="text-xs text-slate-500 mt-1">{pending.length} commission{pending.length !== 1 ? "s" : ""} awaiting</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 card-shadow stat-emerald">
+        <div className="rounded-none border border-slate-200/80 bg-white p-6 card-shadow stat-emerald">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100">
+            <div className="flex h-10 w-10 items-center justify-center rounded-none bg-emerald-100">
               <CheckCircle2 className="h-5 w-5 text-emerald-600" />
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 bg-emerald-100 rounded-full px-2 py-0.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 bg-emerald-100 rounded-none px-2 py-0.5">
               Paid
             </span>
           </div>
@@ -82,12 +82,12 @@ export default async function PayoutsPage() {
           <p className="text-xs text-slate-500 mt-1">{paid.length} commission{paid.length !== 1 ? "s" : ""} paid out</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 card-shadow stat-indigo">
+        <div className="rounded-none border border-slate-200/80 bg-white p-6 card-shadow stat-indigo">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100">
-              <TrendingUp className="h-5 w-5 text-indigo-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-none bg-[#d0e7f7]">
+              <TrendingUp className="h-5 w-5 text-[#006cd2]" />
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-100 rounded-full px-2 py-0.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#006cd2] bg-[#d0e7f7] rounded-none px-2 py-0.5">
               Total
             </span>
           </div>
@@ -97,15 +97,15 @@ export default async function PayoutsPage() {
       </div>
 
       {/* Pending payouts */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden card-shadow">
+      <div className="rounded-none border border-slate-200/80 bg-white overflow-hidden card-shadow">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-amber-50/50">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
+            <div className="flex h-8 w-8 items-center justify-center rounded-none bg-amber-100">
               <Clock className="h-4 w-4 text-amber-600" />
             </div>
             <h2 className="text-sm font-bold text-slate-800">Pending Payouts</h2>
             {pending.length > 0 && (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+              <span className="rounded-none bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                 {pending.length}
               </span>
             )}
@@ -147,15 +147,15 @@ export default async function PayoutsPage() {
       </div>
 
       {/* Paid payouts */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden card-shadow">
+      <div className="rounded-none border border-slate-200/80 bg-white overflow-hidden card-shadow">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-emerald-50/30">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
+            <div className="flex h-8 w-8 items-center justify-center rounded-none bg-emerald-100">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             </div>
             <h2 className="text-sm font-bold text-slate-800">Paid Out</h2>
             {paid.length > 0 && (
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+              <span className="rounded-none bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                 {paid.length}
               </span>
             )}
@@ -215,8 +215,8 @@ function CommissionRow({
   const avatarLetter = (affiliate?.name ?? "?").charAt(0).toUpperCase();
 
   const avatarColors = [
-    "from-indigo-400 to-violet-500",
-    "from-sky-400 to-blue-500",
+    "bg-[#006cd2]",
+    "from-[#006cd2] to-blue-500",
     "from-emerald-400 to-teal-500",
     "from-amber-400 to-orange-500",
     "from-rose-400 to-pink-500",
@@ -226,7 +226,7 @@ function CommissionRow({
   return (
     <div className="grid grid-cols-4 gap-4 px-6 py-4 items-center hover:bg-slate-50/80 transition-colors">
       <div className="col-span-2 flex items-center gap-3">
-        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${avatarColors[colorIndex]} text-xs font-bold text-white shadow-sm`}>
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-none bg-gradient-to-br ${avatarColors[colorIndex]} text-xs font-bold text-white shadow-sm`}>
           {avatarLetter}
         </div>
         <div className="min-w-0">
@@ -249,7 +249,7 @@ function CommissionRow({
         {showAction ? (
           <PayButton commissionId={commission.id} />
         ) : (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+          <span className="inline-flex items-center gap-1 rounded-none bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
             <CheckCircle2 className="h-3 w-3" /> Paid
           </span>
         )}

@@ -74,27 +74,27 @@ export default async function ProgramDetailPage({
               <span>{store?.shopDomain ?? "No store"}</span>
               {store && (
                 <a href={`https://${store.shopDomain}`} target="_blank" rel="noopener noreferrer"
-                  className="text-indigo-500 hover:text-indigo-600">
+                  className="text-[#006cd2] hover:text-[#006cd2]">
                   <ExternalLink className="h-3 w-3" />
                 </a>
               )}
             </div>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2 flex-wrap">
               {program.name}
-              <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusColors[program.status] ?? "badge-draft"}`}>
+              <span className={`rounded-none px-2.5 py-0.5 text-xs font-semibold ${statusColors[program.status] ?? "badge-draft"}`}>
                 {program.status}
               </span>
               {applications.length > 0 && (
-                <span className="rounded-full bg-red-500 text-white px-2 py-0.5 text-xs font-bold animate-pulse">
+                <span className="rounded-none bg-red-500 text-white px-2 py-0.5 text-xs font-bold animate-pulse">
                   {applications.length} pending
                 </span>
               )}
             </h1>
             <div className="flex items-center gap-2 mt-1.5 flex-wrap text-xs text-slate-500">
-              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700">
+              <span className="inline-flex items-center gap-1 rounded-none bg-[#e8f2fb] px-2.5 py-1 font-semibold text-[#0053a3]">
                 <Percent className="h-3 w-3" />{program.commissionRate}%
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-600">
+              <span className="inline-flex items-center gap-1 rounded-none bg-slate-100 px-2.5 py-1 font-medium text-slate-600">
                 {program.programType === "open"
                   ? <><Globe className="h-3 w-3" /> Open</>
                   : <><Lock className="h-3 w-3" /> Approval</>}
@@ -107,7 +107,7 @@ export default async function ProgramDetailPage({
 
           <div className="flex items-center gap-2 flex-wrap">
             <Link href={`/dashboard/programs/${id}/settings`}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors card-shadow">
+              className="inline-flex items-center gap-1.5 rounded-none border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors card-shadow">
               <Settings className="h-3.5 w-3.5" /> Settings
             </Link>
             <ProgramActions programId={id} currentStatus={program.status} />
@@ -118,14 +118,14 @@ export default async function ProgramDetailPage({
       {/* ── Stats ──────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
         {[
-          { icon: Users,        label: "Affiliates",       value: affiliates.filter(a => a.status === "active").length, color: "text-indigo-600", bg: "bg-indigo-50", gradClass: "stat-indigo" },
-          { icon: MousePointer, label: "Total Clicks",     value: totalClicks,                                           color: "text-violet-600", bg: "bg-violet-50", gradClass: "stat-violet" },
+          { icon: Users,        label: "Affiliates",       value: affiliates.filter(a => a.status === "active").length, color: "text-[#006cd2]", bg: "bg-[#e8f2fb]", gradClass: "stat-indigo" },
+          { icon: MousePointer, label: "Total Clicks",     value: totalClicks,                                           color: "text-[#006cd2]", bg: "bg-[#e8f2fb]", gradClass: "stat-indigo" },
           { icon: ShoppingBag,  label: "Orders",           value: orders.length,                                         color: "text-emerald-600",bg: "bg-emerald-50",gradClass: "stat-emerald" },
           { icon: TrendingUp,   label: "Pending Payouts",  value: `$${pendingAmt.toFixed(2)}`,                           color: "text-amber-600",  bg: "bg-amber-50",  gradClass: "stat-amber" },
           { icon: TrendingUp,   label: "Total Earned",     value: `$${totalEarned.toFixed(2)}`,                          color: "text-emerald-600",bg: "bg-emerald-50",gradClass: "stat-emerald" },
         ].map(s => (
-          <div key={s.label} className={`rounded-2xl border border-slate-200/80 p-5 card-shadow ${s.gradClass}`}>
-            <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${s.bg} mb-3`}>
+          <div key={s.label} className={`rounded-none border border-slate-200/80 p-5 card-shadow ${s.gradClass}`}>
+            <div className={`flex h-9 w-9 items-center justify-center rounded-none ${s.bg} mb-3`}>
               <s.icon className={`h-4.5 w-4.5 ${s.color}`} />
             </div>
             <p className="text-xl font-bold text-slate-900">{s.value}</p>
@@ -135,9 +135,9 @@ export default async function ProgramDetailPage({
       </div>
 
       {/* ── Affiliate invite link ──────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-6 card-shadow">
+      <div className="rounded-none border border-slate-200/80 bg-white p-6 card-shadow">
         <div className="flex items-center gap-3 mb-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md">
+          <div className="flex h-9 w-9 items-center justify-center rounded-none bg-gradient-to-br bg-[#006cd2] shadow-md">
             <Link2 className="h-4 w-4 text-white" />
           </div>
           <div>
@@ -148,7 +148,7 @@ export default async function ProgramDetailPage({
         <CopyField value={inviteUrl} />
         <div className="mt-3 flex items-center gap-2 flex-wrap">
           <a href={inviteUrl} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+            className="inline-flex items-center gap-1 text-xs text-[#006cd2] hover:text-[#0053a3] font-medium">
             Preview join page <ExternalLink className="h-3 w-3" />
           </a>
           <span className="text-slate-300">·</span>
@@ -160,26 +160,26 @@ export default async function ProgramDetailPage({
 
       {/* ── Product scope ──────────────────────────────────────────────────── */}
       {!program.allProducts && selectedProducts.length > 0 && (
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 card-shadow">
+        <div className="rounded-none border border-slate-200/80 bg-white p-6 card-shadow">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50">
-                <Package className="h-4 w-4 text-violet-600" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-none bg-[#e8f2fb]">
+                <Package className="h-4 w-4 text-[#006cd2]" />
               </div>
               <h2 className="text-sm font-bold text-slate-900">
                 Eligible products ({selectedProducts.length})
               </h2>
             </div>
             <Link href={`/dashboard/programs/${id}/settings`}
-              className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">Edit →</Link>
+              className="text-xs text-[#006cd2] hover:text-[#0053a3] font-medium">Edit →</Link>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
             {selectedProducts.slice(0, 8).map(p => (
-              <div key={p.id} className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 p-2">
+              <div key={p.id} className="flex items-center gap-2 rounded-none border border-slate-100 bg-slate-50 p-2">
                 {p.imageUrl ? (
-                  <img src={p.imageUrl} alt={p.title} className="h-8 w-8 rounded-lg object-cover shrink-0" />
+                  <img src={p.imageUrl} alt={p.title} className="h-8 w-8 rounded-none object-cover shrink-0" />
                 ) : (
-                  <div className="h-8 w-8 rounded-lg bg-slate-200 flex items-center justify-center shrink-0">
+                  <div className="h-8 w-8 rounded-none bg-slate-200 flex items-center justify-center shrink-0">
                     <Package className="h-3.5 w-3.5 text-slate-400" />
                   </div>
                 )}
@@ -190,7 +190,7 @@ export default async function ProgramDetailPage({
               </div>
             ))}
             {selectedProducts.length > 8 && (
-              <div className="flex items-center justify-center rounded-xl border border-dashed border-slate-200 p-2 text-xs text-slate-400">
+              <div className="flex items-center justify-center rounded-none border border-dashed border-slate-200 p-2 text-xs text-slate-400">
                 +{selectedProducts.length - 8} more
               </div>
             )}
@@ -199,7 +199,7 @@ export default async function ProgramDetailPage({
       )}
 
       {program.allProducts && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-2 text-sm text-emerald-800">
+        <div className="rounded-none border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-2 text-sm text-emerald-800">
           <Globe className="h-4 w-4 text-emerald-600 shrink-0" />
           Affiliates earn commission on <strong>all products</strong> in your store.
           <Link href={`/dashboard/programs/${id}/settings`} className="ml-auto text-xs font-semibold text-emerald-700 hover:text-emerald-800">
@@ -214,14 +214,14 @@ export default async function ProgramDetailPage({
       )}
 
       {/* ── Affiliates table ───────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden card-shadow">
+      <div className="rounded-none border border-slate-200/80 bg-white overflow-hidden card-shadow">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50">
-              <Users className="h-4 w-4 text-indigo-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-none bg-[#e8f2fb]">
+              <Users className="h-4 w-4 text-[#006cd2]" />
             </div>
             <h2 className="text-sm font-bold text-slate-800">Affiliates</h2>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
+            <span className="rounded-none bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
               {affiliates.length}
             </span>
           </div>
@@ -234,7 +234,7 @@ export default async function ProgramDetailPage({
         </div>
         {affiliates.length === 0 ? (
           <div className="px-6 py-12 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 mx-auto mb-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-none bg-slate-100 mx-auto mb-3">
               <Users className="h-6 w-6 text-slate-300" />
             </div>
             <p className="text-sm font-medium text-slate-500">No affiliates yet</p>
@@ -253,7 +253,7 @@ export default async function ProgramDetailPage({
                 return (
                   <div key={a.id} className="grid grid-cols-4 gap-4 px-6 py-3.5 items-center hover:bg-slate-50/80 transition-colors">
                     <div className="col-span-2 flex items-center gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 text-xs font-bold text-white shadow-sm">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-none bg-gradient-to-br bg-[#006cd2] text-xs font-bold text-white shadow-sm">
                         {a.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
@@ -261,7 +261,7 @@ export default async function ProgramDetailPage({
                         <p className="text-xs text-slate-400 truncate">{a.email}</p>
                       </div>
                       {a.status === "paused" && (
-                        <span className="text-[10px] rounded-full bg-amber-50 text-amber-600 px-1.5 py-0.5 font-medium">paused</span>
+                        <span className="text-[10px] rounded-none bg-amber-50 text-amber-600 px-1.5 py-0.5 font-medium">paused</span>
                       )}
                     </div>
                     <div className="text-center text-sm font-semibold text-slate-700">{clickCountMap.get(a.id) ?? 0}</div>
@@ -275,19 +275,19 @@ export default async function ProgramDetailPage({
       </div>
 
       {/* ── Recent orders ──────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden card-shadow">
+      <div className="rounded-none border border-slate-200/80 bg-white overflow-hidden card-shadow">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50">
+            <div className="flex h-8 w-8 items-center justify-center rounded-none bg-emerald-50">
               <ShoppingBag className="h-4 w-4 text-emerald-600" />
             </div>
             <h2 className="text-sm font-bold text-slate-800">Recent orders</h2>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
+            <span className="rounded-none bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
               {orders.length}
             </span>
           </div>
           {orders.length > 0 && (
-            <Link href="/dashboard/payouts" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+            <Link href="/dashboard/payouts" className="text-xs font-semibold text-[#006cd2] hover:text-[#0053a3]">
               View payouts →
             </Link>
           )}
@@ -322,7 +322,7 @@ export default async function ProgramDetailPage({
                       {com ? (
                         <div>
                           <p className="text-sm font-bold text-slate-900">${com.amount.toFixed(2)}</p>
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${com.status === "paid" ? "badge-paid" : "badge-pending"}`}>
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-none ${com.status === "paid" ? "badge-paid" : "badge-pending"}`}>
                             {com.status}
                           </span>
                         </div>
@@ -337,7 +337,7 @@ export default async function ProgramDetailPage({
             {orders.length > 20 && (
               <div className="px-6 py-3 border-t border-slate-100 text-center text-xs text-slate-400">
                 Showing 20 of {orders.length} orders ·{" "}
-                <Link href="/dashboard/payouts" className="text-indigo-600 hover:text-indigo-700 font-medium">
+                <Link href="/dashboard/payouts" className="text-[#006cd2] hover:text-[#0053a3] font-medium">
                   View all in payouts →
                 </Link>
               </div>

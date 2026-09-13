@@ -13,9 +13,9 @@ const CATEGORIES = [
 ];
 
 const inputCls =
-  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 " +
-  "placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 " +
-  "focus:ring-indigo-100 transition-all";
+  "w-full rounded-none border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 " +
+  "placeholder:text-slate-400 focus:border-[#006cd2] focus:outline-none focus:ring-2 " +
+  "focus:ring-[#d0e7f7] transition-all";
 
 const labelCls = "block text-sm font-semibold text-slate-700 mb-1.5";
 
@@ -170,8 +170,8 @@ export default function NewProgramForm({ stores, initialStoreId }: {
           const current = s.key === step;
           return (
             <div key={s.key} className="flex items-center">
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                current ? "bg-indigo-600 text-white shadow-md" :
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-semibold transition-all ${
+                current ? "bg-[#006cd2] text-white shadow-md" :
                 done    ? "bg-emerald-100 text-emerald-700" :
                           "bg-slate-100 text-slate-400"
               }`}>
@@ -187,7 +187,7 @@ export default function NewProgramForm({ stores, initialStoreId }: {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 rounded-none bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -204,9 +204,9 @@ export default function NewProgramForm({ stores, initialStoreId }: {
             </div>
           )}
           {stores.length === 1 && (
-            <div className="flex items-center gap-2 rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-3">
-              <Store className="h-4 w-4 text-indigo-500 shrink-0" />
-              <span className="text-sm text-indigo-700 font-medium">{store?.shopDomain}</span>
+            <div className="flex items-center gap-2 rounded-none bg-[#e8f2fb] border border-[#d0e7f7] px-4 py-3">
+              <Store className="h-4 w-4 text-[#006cd2] shrink-0" />
+              <span className="text-sm text-[#0053a3] font-medium">{store?.shopDomain}</span>
             </div>
           )}
 
@@ -246,27 +246,27 @@ export default function NewProgramForm({ stores, initialStoreId }: {
           <button
             type="button"
             onClick={() => setAllProducts(!allProducts)}
-            className={`w-full flex items-center justify-between rounded-xl border px-4 py-3.5 transition-all ${
-              allProducts ? "border-indigo-300 bg-indigo-50" : "border-slate-200 bg-white"
+            className={`w-full flex items-center justify-between rounded-none border px-4 py-3.5 transition-all ${
+              allProducts ? "border-[#80bae6] bg-[#e8f2fb]" : "border-slate-200 bg-white"
             }`}
           >
             <div className="flex items-center gap-3">
-              <Globe className={`h-5 w-5 ${allProducts ? "text-indigo-600" : "text-slate-400"}`} />
+              <Globe className={`h-5 w-5 ${allProducts ? "text-[#006cd2]" : "text-slate-400"}`} />
               <div className="text-left">
-                <p className={`text-sm font-semibold ${allProducts ? "text-indigo-700" : "text-slate-700"}`}>
+                <p className={`text-sm font-semibold ${allProducts ? "text-[#0053a3]" : "text-slate-700"}`}>
                   All products
                 </p>
                 <p className="text-xs text-slate-400">Affiliates earn on any product in your store</p>
               </div>
             </div>
             {allProducts
-              ? <ToggleRight className="h-6 w-6 text-indigo-600" />
+              ? <ToggleRight className="h-6 w-6 text-[#006cd2]" />
               : <ToggleLeft className="h-6 w-6 text-slate-300" />
             }
           </button>
 
           {!allProducts && (
-            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+            <div className="rounded-none border border-slate-200 bg-white overflow-hidden">
               {/* Search */}
               <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2.5">
                 <Search className="h-4 w-4 text-slate-400 shrink-0" />
@@ -274,7 +274,7 @@ export default function NewProgramForm({ stores, initialStoreId }: {
                   onChange={e => setSearch(e.target.value)}
                   className="flex-1 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent" />
                 {selectedIds.size > 0 && (
-                  <span className="text-xs bg-indigo-100 text-indigo-700 font-semibold px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-[#d0e7f7] text-[#0053a3] font-semibold px-2 py-0.5 rounded-none">
                     {selectedIds.size} selected
                   </span>
                 )}
@@ -295,13 +295,13 @@ export default function NewProgramForm({ stores, initialStoreId }: {
                   {filteredProducts.map(p => {
                     const selected = selectedIds.has(p.id);
                     return (
-                      <label key={p.id} className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${selected ? "bg-indigo-50/60" : "hover:bg-slate-50"}`}>
+                      <label key={p.id} className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${selected ? "bg-[#e8f2fb]/60" : "hover:bg-slate-50"}`}>
                         <input type="checkbox" checked={selected} onChange={() => toggleProduct(p.id)}
-                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 shrink-0" />
+                          className="rounded border-slate-300 text-[#006cd2] focus:ring-[#006cd2] h-4 w-4 shrink-0" />
                         {p.imageUrl ? (
-                          <img src={p.imageUrl} alt={p.title} className="h-10 w-10 rounded-lg object-cover shrink-0 border border-slate-200" />
+                          <img src={p.imageUrl} alt={p.title} className="h-10 w-10 rounded-none object-cover shrink-0 border border-slate-200" />
                         ) : (
-                          <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                          <div className="h-10 w-10 rounded-none bg-slate-100 flex items-center justify-center shrink-0">
                             <Package className="h-4 w-4 text-slate-400" />
                           </div>
                         )}
@@ -309,7 +309,7 @@ export default function NewProgramForm({ stores, initialStoreId }: {
                           <p className="text-sm font-medium text-slate-800 truncate">{p.title}</p>
                           <p className="text-xs text-slate-400">{p.price ? `$${p.price.toFixed(2)}` : "—"}</p>
                         </div>
-                        {selected && <CheckCircle2 className="h-4 w-4 text-indigo-500 shrink-0" />}
+                        {selected && <CheckCircle2 className="h-4 w-4 text-[#006cd2] shrink-0" />}
                       </label>
                     );
                   })}
@@ -319,12 +319,12 @@ export default function NewProgramForm({ stores, initialStoreId }: {
               <div className="border-t border-slate-100 px-4 py-2.5 flex justify-between text-xs text-slate-400">
                 <span>{products.length} products total</span>
                 <button type="button" onClick={() => setSelectedIds(new Set(products.map(p => p.id)))}
-                  className="text-indigo-600 hover:text-indigo-700 font-medium">Select all</button>
+                  className="text-[#006cd2] hover:text-[#0053a3] font-medium">Select all</button>
               </div>
             </div>
           )}
           {!allProducts && selectedIds.size === 0 && products.length > 0 && (
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-none px-3 py-2">
               Select at least one product — affiliates won&apos;t earn on any order until you do.
             </p>
           )}
@@ -355,14 +355,14 @@ export default function NewProgramForm({ stores, initialStoreId }: {
                 { v: "approval", icon: Lock,  label: "Approval", desc: "You review and approve affiliates" },
               ] as const).map(opt => (
                 <button key={opt.v} type="button" onClick={() => setProgramType(opt.v)}
-                  className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition-all ${
+                  className={`flex items-start gap-3 rounded-none border p-3.5 text-left transition-all ${
                     programType === opt.v
-                      ? "border-indigo-400 bg-indigo-50"
+                      ? "border-[#006cd2] bg-[#e8f2fb]"
                       : "border-slate-200 bg-white hover:border-slate-300"
                   }`}>
-                  <opt.icon className={`h-5 w-5 mt-0.5 shrink-0 ${programType === opt.v ? "text-indigo-600" : "text-slate-400"}`} />
+                  <opt.icon className={`h-5 w-5 mt-0.5 shrink-0 ${programType === opt.v ? "text-[#006cd2]" : "text-slate-400"}`} />
                   <div>
-                    <p className={`text-sm font-semibold ${programType === opt.v ? "text-indigo-700" : "text-slate-700"}`}>{opt.label}</p>
+                    <p className={`text-sm font-semibold ${programType === opt.v ? "text-[#0053a3]" : "text-slate-700"}`}>{opt.label}</p>
                     <p className="text-xs text-slate-400 mt-0.5">{opt.desc}</p>
                   </div>
                 </button>
@@ -413,7 +413,7 @@ export default function NewProgramForm({ stores, initialStoreId }: {
       {step === "publish" && (
         <div className="space-y-5">
           {/* Summary card */}
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-3">
+          <div className="rounded-none border border-slate-200 bg-slate-50 p-5 space-y-3">
             <h3 className="text-sm font-bold text-slate-800">Program summary</h3>
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
               {[
@@ -434,19 +434,19 @@ export default function NewProgramForm({ stores, initialStoreId }: {
             </div>
           </div>
 
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <div className="rounded-none border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             <strong>Publishing</strong> makes your program live in the marketplace so affiliates can discover and join it.
             You can pause it at any time from the program settings.
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <button type="button" onClick={onSaveDraft} disabled={loading}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all disabled:opacity-60">
+              className="inline-flex items-center justify-center gap-2 rounded-none border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all disabled:opacity-60">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Save as draft
             </button>
             <button type="button" onClick={onPublish} disabled={loading}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md hover:brightness-105 transition-all disabled:opacity-60">
+              className="inline-flex items-center justify-center gap-2 rounded-none bg-gradient-to-r bg-[#006cd2] px-4 py-2.5 text-sm font-semibold text-white shadow-md hover:opacity-90 transition-all disabled:opacity-60">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
               Publish program
             </button>
@@ -464,7 +464,7 @@ export default function NewProgramForm({ stores, initialStoreId }: {
             </button>
           ) : <div />}
           <button type="button" onClick={goNext} disabled={!canAdvance()}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-all disabled:opacity-40 shadow-md">
+            className="inline-flex items-center gap-2 rounded-none bg-[#006cd2] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0053a3] transition-all disabled:opacity-40 shadow-md">
             Continue <ArrowRight className="h-4 w-4" />
           </button>
         </div>

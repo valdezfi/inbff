@@ -26,7 +26,7 @@ export default async function NewProgramPage({
       </Link>
 
       <div className="flex items-center gap-3 mb-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md">
+        <div className="flex h-10 w-10 items-center justify-center rounded-none bg-gradient-to-br bg-[#006cd2] shadow-md">
           <Plus className="h-5 w-5 text-white" />
         </div>
         <div>
@@ -37,7 +37,7 @@ export default async function NewProgramPage({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-6 card-shadow">
+      <div className="rounded-none border border-slate-200/80 bg-white p-6 card-shadow">
         <NewProgramForm
           stores={stores.map(s => ({ id: s.id, shopDomain: s.shopDomain }))}
           initialStoreId={storeId}

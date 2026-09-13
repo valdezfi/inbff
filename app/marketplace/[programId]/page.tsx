@@ -63,13 +63,13 @@ export default async function ProgramDetailPage({ params }: Ctx) {
           {/* Main */}
           <div>
             {program.bannerUrl && (
-              <img src={program.bannerUrl} alt="" className="w-full h-48 object-cover rounded-2xl mb-6" />
+              <img src={program.bannerUrl} alt="" className="w-full h-48 object-cover rounded-none mb-6" />
             )}
             <div className="flex items-center gap-2 mb-2">
               <span className="font-mono text-[10px] uppercase tracking-widest text-white/40 flex items-center gap-1">
                 <Store className="h-3 w-3" />{store?.shopDomain ?? ""}
               </span>
-              <span className="rounded-full bg-white/5 border border-white/10 px-2 py-0.5 text-[11px] text-white/40 flex items-center gap-1">
+              <span className="rounded-none bg-white/5 border border-white/10 px-2 py-0.5 text-[11px] text-white/40 flex items-center gap-1">
                 <Tag className="h-3 w-3" />{program.category}
               </span>
             </div>
@@ -85,7 +85,7 @@ export default async function ProgramDetailPage({ params }: Ctx) {
                 { icon: Clock,      label: "Cookie window", value: `${program.attributionWindowDays} days`, color: "text-blue-400" },
                 { icon: Users,      label: "Affiliates", value: activeCount, color: "text-purple-400" },
               ].map(s => (
-                <div key={s.label} className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center">
+                <div key={s.label} className="rounded-none border border-white/10 bg-white/[0.03] p-4 text-center">
                   <s.icon className={`h-5 w-5 mx-auto mb-2 ${s.color}`} />
                   <p className="text-lg font-bold text-white">{s.value}</p>
                   <p className="text-xs text-white/40 mt-0.5">{s.label}</p>
@@ -94,7 +94,7 @@ export default async function ProgramDetailPage({ params }: Ctx) {
             </div>
 
             {/* How earnings work */}
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+            <div className="rounded-none border border-white/10 bg-white/[0.03] p-6">
               <h2 className="font-semibold text-white mb-3">How it works</h2>
               <ol className="space-y-2 text-sm text-white/60">
                 <li className="flex gap-2"><span className="text-[#3B82F6] font-mono">01</span> Join to get your unique referral link</li>
@@ -107,7 +107,7 @@ export default async function ProgramDetailPage({ params }: Ctx) {
 
           {/* Join card */}
           <div className="sticky top-24">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-sm p-6">
+            <div className="rounded-none border border-white/10 bg-white/[0.04] backdrop-blur-sm p-6">
               <div className="text-center mb-6">
                 <p className="text-3xl font-bold text-emerald-400">{program.commissionRate}%</p>
                 <p className="text-sm text-white/50 mt-0.5">commission per sale</p>

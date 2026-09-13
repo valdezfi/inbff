@@ -11,7 +11,7 @@ const STEPS = [
   { n: 4, label: "Payout",     icon: CreditCard },
 ];
 
-const inputCls = "w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all bg-white";
+const inputCls = "w-full rounded-none border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all bg-white";
 const labelCls = "block text-sm font-medium text-gray-700 mb-1.5";
 
 export default function WizardShell({
@@ -85,7 +85,7 @@ export default function WizardShell({
       <div className="flex items-center gap-0 mb-8">
         {STEPS.map((s, i) => (
           <div key={s.n} className="flex items-center">
-            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold border-2 transition-all ${
+            <div className={`flex h-8 w-8 items-center justify-center rounded-none text-xs font-semibold border-2 transition-all ${
               step > s.n ? "bg-blue-600 border-blue-600 text-white" :
               step === s.n ? "border-blue-600 text-blue-600 bg-blue-50" :
               "border-gray-200 text-gray-400 bg-white"
@@ -99,7 +99,7 @@ export default function WizardShell({
       </div>
 
       {/* Card */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-7 shadow-sm">
+      <div className="rounded-none border border-gray-200 bg-white p-7 shadow-sm">
 
         {/* ── Step 1: Products ─────────────────────────── */}
         {step === 1 && (
@@ -117,14 +117,14 @@ export default function WizardShell({
             )}
 
             <div className="space-y-3">
-              <label className="flex items-center gap-3 rounded-xl border-2 p-4 cursor-pointer transition-all hover:border-blue-300 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+              <label className="flex items-center gap-3 rounded-none border-2 p-4 cursor-pointer transition-all hover:border-blue-300 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
                 <input type="radio" name="products" checked={allProducts} onChange={() => setAllProducts(true)} className="accent-blue-600" />
                 <div>
                   <p className="text-sm font-medium text-gray-900">All products</p>
                   <p className="text-xs text-gray-500">Commission applies to every product in the store</p>
                 </div>
               </label>
-              <label className="flex items-start gap-3 rounded-xl border-2 p-4 cursor-pointer transition-all hover:border-blue-300 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+              <label className="flex items-start gap-3 rounded-none border-2 p-4 cursor-pointer transition-all hover:border-blue-300 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
                 <input type="radio" name="products" checked={!allProducts} onChange={() => setAllProducts(false)} className="accent-blue-600 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">Specific products</p>
@@ -133,9 +133,9 @@ export default function WizardShell({
                     products.length === 0 ? (
                       <p className="text-xs text-amber-600">No products synced yet. <button onClick={async () => { await fetch("/api/shopify/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ storeId }) }); router.refresh(); }} className="underline">Sync now</button></p>
                     ) : (
-                      <div className="max-h-48 overflow-y-auto space-y-1.5 border border-gray-200 rounded-lg p-2">
+                      <div className="max-h-48 overflow-y-auto space-y-1.5 border border-gray-200 rounded-none p-2">
                         {products.map(p => (
-                          <label key={p.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-gray-50 cursor-pointer">
+                          <label key={p.id} className="flex items-center gap-2.5 rounded-none px-2 py-1.5 hover:bg-gray-50 cursor-pointer">
                             <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={e => setSelectedIds(prev => e.target.checked ? [...prev, p.id] : prev.filter(x => x !== p.id))} className="accent-blue-600 shrink-0" />
                             {p.imageUrl && <img src={p.imageUrl} alt="" className="h-8 w-8 rounded object-cover shrink-0" />}
                             <div className="min-w-0">
@@ -154,7 +154,7 @@ export default function WizardShell({
             {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
             <button onClick={() => saveStep({ allProducts, productIds: allProducts ? [] : selectedIds }, 2)}
               disabled={loading || (!allProducts && selectedIds.length === 0)}
-              className="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-60">
+              className="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-none bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-60">
               {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</> : <>Next: Commission <ArrowRight className="h-4 w-4" /></>}
             </button>
           </>
@@ -188,7 +188,7 @@ export default function WizardShell({
                 <label className={labelCls}>Program type</label>
                 <div className="grid grid-cols-2 gap-3">
                   {[["open", "Open", "Anyone joins instantly"], ["approval", "Approval-based", "You review applicants"]].map(([val, title, desc]) => (
-                    <label key={val} className={`flex flex-col gap-1 rounded-xl border-2 p-4 cursor-pointer transition-all ${pType === val ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-blue-300"}`}>
+                    <label key={val} className={`flex flex-col gap-1 rounded-none border-2 p-4 cursor-pointer transition-all ${pType === val ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-blue-300"}`}>
                       <input type="radio" name="ptype" value={val} checked={pType === val} onChange={() => setPType(val as "open"|"approval")} className="sr-only" />
                       <p className="text-sm font-semibold text-gray-900">{title}</p>
                       <p className="text-xs text-gray-500">{desc}</p>
@@ -200,10 +200,10 @@ export default function WizardShell({
 
             {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
             <div className="mt-6 flex gap-3">
-              <button onClick={() => setStep(1)} className="flex-1 rounded-xl border border-gray-200 px-5 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">Back</button>
+              <button onClick={() => setStep(1)} className="flex-1 rounded-none border border-gray-200 px-5 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">Back</button>
               <button onClick={() => saveStep({ commissionRate: rate, attributionWindowDays: window_, programType: pType }, 3)}
                 disabled={loading}
-                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-60">
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-none bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-60">
                 {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</> : <>Next: Details <ArrowRight className="h-4 w-4" /></>}
               </button>
             </div>
@@ -240,10 +240,10 @@ export default function WizardShell({
 
             {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
             <div className="mt-6 flex gap-3">
-              <button onClick={() => setStep(2)} className="flex-1 rounded-xl border border-gray-200 px-5 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">Back</button>
+              <button onClick={() => setStep(2)} className="flex-1 rounded-none border border-gray-200 px-5 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">Back</button>
               <button onClick={() => saveStep({ name: name.trim(), description: description || null, category, bannerUrl: bannerUrl || null }, 4)}
                 disabled={loading || !name.trim()}
-                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-60">
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-none bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-60">
                 {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</> : <>Next: Payout <ArrowRight className="h-4 w-4" /></>}
               </button>
             </div>
@@ -282,7 +282,7 @@ export default function WizardShell({
             </div>
 
             {/* Summary */}
-            <div className="mt-6 rounded-xl bg-blue-50 border border-blue-200 p-4 space-y-2 text-sm">
+            <div className="mt-6 rounded-none bg-blue-50 border border-blue-200 p-4 space-y-2 text-sm">
               <p className="font-semibold text-blue-900 mb-1">Program summary</p>
               {[
                 ["Commission", `${rate}%`],
@@ -300,10 +300,10 @@ export default function WizardShell({
 
             {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
             <div className="mt-6 flex gap-3">
-              <button onClick={() => setStep(3)} className="flex-1 rounded-xl border border-gray-200 px-5 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">Back</button>
+              <button onClick={() => setStep(3)} className="flex-1 rounded-none border border-gray-200 px-5 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">Back</button>
               <button onClick={() => saveStep({ payoutThreshold: threshold, payoutSchedule: schedule, currency }, 5)}
                 disabled={loading}
-                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:brightness-110 transition-all disabled:opacity-60">
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-none bg-gradient-to-r from-blue-600 to-[#006cd2] px-5 py-3 text-sm font-semibold text-white hover:brightness-110 transition-all disabled:opacity-60">
                 {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Publishing…</> : <>Publish program 🚀</>}
               </button>
             </div>

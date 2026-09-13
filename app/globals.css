@@ -61,25 +61,25 @@ body {
   color: var(--foreground);
 }
 
-/* ─── Dashboard — premium light theme ────────────────────────────────────── */
+/* ─── Dashboard — light theme aligned with landing (#006cd2 blue, sharp corners) ── */
 .dash {
-  --background: #f4f6fa;
-  --foreground: #0f172a;
+  --background: #f5f7fa;
+  --foreground: #0a0a0a;
   --card: #ffffff;
-  --card-foreground: #0f172a;
-  --primary: #4f46e5;
+  --card-foreground: #0a0a0a;
+  --primary: #006cd2;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #334155;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #4f46e5;
+  --secondary: #f0f4f8;
+  --secondary-foreground: #1a1a1a;
+  --muted: #f0f4f8;
+  --muted-foreground: #6b7378;
+  --accent: #006cd2;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #e2e8f0;
+  --border: #e4e8ed;
   --input: #ffffff;
-  --ring: #4f46e5;
+  --ring: #006cd2;
   --success: #059669;
   --warning: #d97706;
   background: var(--background);
@@ -87,12 +87,12 @@ body {
   color-scheme: light;
 }
 
-/* ─── Sidebar gradients ───────────────────────────────────────────────────── */
+/* ─── Sidebar gradients — blue-anchored to match landing ────────────────── */
 .sidebar-gradient {
-  background: linear-gradient(180deg, #1e1b4b 0%, #312e81 40%, #1e1b4b 100%);
+  background: linear-gradient(180deg, #003a70 0%, #005299 40%, #003a70 100%);
 }
 .sidebar-gradient-affiliate {
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  background: linear-gradient(180deg, #001f3f 0%, #003366 50%, #004080 100%);
 }
 
 /* ─── Card shadows ────────────────────────────────────────────────────────── */
@@ -106,13 +106,13 @@ body {
   box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05);
 }
 
-/* ─── Stat card gradient backgrounds ─────────────────────────────────────── */
-.stat-indigo  { background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); }
-.stat-violet  { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); }
+/* ─── Stat card gradient backgrounds — blue system ─────────────────────── */
+.stat-indigo  { background: linear-gradient(135deg, #e8f2fb 0%, #d0e7f7 100%); }
+.stat-violet  { background: linear-gradient(135deg, #edf4fd 0%, #d8ecfa 100%); }
 .stat-emerald { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); }
 .stat-amber   { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); }
 .stat-rose    { background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); }
-.stat-sky     { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); }
+.stat-sky     { background: linear-gradient(135deg, #e8f4fb 0%, #d0e9f7 100%); }
 
 /* ─── Animations ──────────────────────────────────────────────────────────── */
 @keyframes blink {

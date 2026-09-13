@@ -39,7 +39,7 @@ export default async function AffiliateProgramsPage() {
         </div>
         <Link
           href="/marketplace"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-sky-200 hover:brightness-105 transition-all"
+          className="inline-flex items-center gap-2 rounded-none bg-gradient-to-r bg-[#006cd2] px-4 py-2.5 text-sm font-semibold text-white shadow-md  hover:opacity-90 transition-all"
         >
           <Plus className="h-4 w-4" />
           Find more
@@ -47,8 +47,8 @@ export default async function AffiliateProgramsPage() {
       </div>
 
       {rows.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-16 text-center card-shadow">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 mx-auto mb-5 shadow-lg shadow-sky-200">
+        <div className="rounded-none border border-dashed border-slate-300 bg-white p-16 text-center card-shadow">
+          <div className="flex h-16 w-16 items-center justify-center rounded-none bg-gradient-to-br bg-[#006cd2] mx-auto mb-5 shadow-lg ">
             <Sparkles className="h-8 w-8 text-white" />
           </div>
           <h3 className="font-bold text-slate-900 mb-2 text-base">No programs joined yet</h3>
@@ -57,7 +57,7 @@ export default async function AffiliateProgramsPage() {
           </p>
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-sky-200 hover:brightness-105 transition-all"
+            className="inline-flex items-center gap-2 rounded-none bg-gradient-to-r bg-[#006cd2] px-5 py-2.5 text-sm font-semibold text-white shadow-md  hover:opacity-90 transition-all"
           >
             Browse the marketplace →
           </Link>
@@ -65,29 +65,29 @@ export default async function AffiliateProgramsPage() {
       ) : (
         <div className="space-y-4">
           {rows.map(({ aff, program, store, clicks, orders, pending, paid }) => (
-            <div key={aff.id} className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden card-shadow hover:card-shadow-md transition-all">
+            <div key={aff.id} className="rounded-none border border-slate-200/80 bg-white overflow-hidden card-shadow  transition-all">
               {/* Card header */}
               <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-slate-100">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 shadow-md">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-none bg-gradient-to-br bg-[#006cd2] shadow-md">
                     <Link2 className="h-5 w-5 text-white" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-bold text-slate-900 text-sm">{program?.name ?? "—"}</h3>
                       {aff.status === "active" ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                        <span className="inline-flex items-center gap-1 rounded-none bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
                           <CheckCircle2 className="h-3 w-3" /> Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                        <span className="inline-flex items-center gap-1 rounded-none bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
                           <PauseCircle className="h-3 w-3" /> Paused
                         </span>
                       )}
                     </div>
                     <p className="text-xs text-slate-400">
                       {store?.shopDomain ?? "Unknown store"} ·{" "}
-                      <span className="text-indigo-600 font-medium">{program?.commissionRate ?? '—'}%</span> commission
+                      <span className="text-[#006cd2] font-medium">{program?.commissionRate ?? '—'}%</span> commission
                     </p>
                   </div>
                 </div>
@@ -96,7 +96,7 @@ export default async function AffiliateProgramsPage() {
                     href={`https://${store.shopDomain}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-sky-600 hover:text-sky-700 font-medium transition-colors"
+                    className="flex items-center gap-1 text-xs text-[#006cd2] hover:text-[#0053a3] font-medium transition-colors"
                   >
                     Visit store <ExternalLink className="h-3 w-3" />
                   </a>
@@ -106,13 +106,13 @@ export default async function AffiliateProgramsPage() {
               {/* Stats row */}
               <div className="grid grid-cols-4 divide-x divide-slate-100 bg-slate-50/50">
                 {[
-                  { icon: MousePointer, label: "Clicks",   value: clicks,                    color: "text-sky-600",     bg: "bg-sky-50" },
-                  { icon: ShoppingBag,  label: "Orders",   value: orders,                    color: "text-violet-600",  bg: "bg-violet-50" },
+                  { icon: MousePointer, label: "Clicks",   value: clicks,                    color: "text-[#006cd2]",     bg: "bg-[#e8f4fb]" },
+                  { icon: ShoppingBag,  label: "Orders",   value: orders,                    color: "text-[#006cd2]",  bg: "bg-[#e8f2fb]" },
                   { icon: TrendingUp,   label: "Pending",  value: `$${pending.toFixed(2)}`,  color: "text-amber-600",   bg: "bg-amber-50" },
                   { icon: TrendingUp,   label: "Paid",     value: `$${paid.toFixed(2)}`,     color: "text-emerald-600", bg: "bg-emerald-50" },
                 ].map((s) => (
                   <div key={s.label} className="flex flex-col items-center py-4 gap-1">
-                    <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${s.bg}`}>
+                    <div className={`flex h-7 w-7 items-center justify-center rounded-none ${s.bg}`}>
                       <s.icon className={`h-3.5 w-3.5 ${s.color}`} />
                     </div>
                     <p className={`text-sm font-bold ${s.color}`}>{s.value}</p>

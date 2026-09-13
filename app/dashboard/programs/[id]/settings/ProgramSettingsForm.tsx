@@ -8,8 +8,8 @@ import {
 import type { AffiliateProgram } from "@/lib/types";
 
 const inputCls =
-  "w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 " +
-  "focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 " +
+  "w-full rounded-none border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 " +
+  "focus:border-[#006cd2] focus:outline-none focus:ring-2 focus:ring-[#d0e7f7] " +
   "transition-all bg-white";
 const labelCls = "block text-sm font-semibold text-slate-700 mb-1.5";
 
@@ -160,19 +160,19 @@ export default function ProgramSettingsForm({
         <p className="text-xs text-slate-400">Choose which products affiliates earn commission on.</p>
 
         <button type="button" onClick={() => setAllProducts(!allProducts)}
-          className={`w-full flex items-center justify-between rounded-xl border px-4 py-3 transition-all ${allProducts ? "border-indigo-300 bg-indigo-50" : "border-slate-200 bg-white"}`}>
+          className={`w-full flex items-center justify-between rounded-none border px-4 py-3 transition-all ${allProducts ? "border-[#80bae6] bg-[#e8f2fb]" : "border-slate-200 bg-white"}`}>
           <div className="flex items-center gap-3">
-            <Globe className={`h-4 w-4 ${allProducts ? "text-indigo-600" : "text-slate-400"}`} />
+            <Globe className={`h-4 w-4 ${allProducts ? "text-[#006cd2]" : "text-slate-400"}`} />
             <div className="text-left">
-              <p className={`text-sm font-semibold ${allProducts ? "text-indigo-700" : "text-slate-700"}`}>All products</p>
+              <p className={`text-sm font-semibold ${allProducts ? "text-[#0053a3]" : "text-slate-700"}`}>All products</p>
               <p className="text-xs text-slate-400">Commission on any order from your store</p>
             </div>
           </div>
-          {allProducts ? <ToggleRight className="h-5 w-5 text-indigo-600" /> : <ToggleLeft className="h-5 w-5 text-slate-300" />}
+          {allProducts ? <ToggleRight className="h-5 w-5 text-[#006cd2]" /> : <ToggleLeft className="h-5 w-5 text-slate-300" />}
         </button>
 
         {!allProducts && (
-          <div className="rounded-xl border border-slate-200 overflow-hidden">
+          <div className="rounded-none border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2">
               <div className="flex items-center gap-2 flex-1">
                 <Search className="h-4 w-4 text-slate-400 shrink-0" />
@@ -182,12 +182,12 @@ export default function ProgramSettingsForm({
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {selectedIds.size > 0 && (
-                  <span className="text-xs bg-indigo-100 text-indigo-700 font-semibold px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-[#d0e7f7] text-[#0053a3] font-semibold px-2 py-0.5 rounded-none">
                     {selectedIds.size} selected
                   </span>
                 )}
                 <button type="button" onClick={syncProducts} disabled={syncing}
-                  className="flex items-center gap-1 text-xs text-slate-500 hover:text-indigo-600 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1 text-xs text-slate-500 hover:text-[#006cd2] transition-colors disabled:opacity-50"
                   title="Re-sync products from Shopify">
                   <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
                   {syncing ? "Syncing…" : "Sync"}
@@ -207,7 +207,7 @@ export default function ProgramSettingsForm({
                   Connect your Shopify store and click Sync to load products.
                 </p>
                 <button type="button" onClick={syncProducts} disabled={syncing}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 mt-2">
+                  className="inline-flex items-center gap-1.5 rounded-none bg-[#006cd2] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0053a3] transition-colors disabled:opacity-50 mt-2">
                   <RefreshCw className="h-3.5 w-3.5" /> Sync products now
                 </button>
               </div>
@@ -217,13 +217,13 @@ export default function ProgramSettingsForm({
                   {filtered.map(p => {
                     const selected = selectedIds.has(p.id);
                     return (
-                      <label key={p.id} className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${selected ? "bg-indigo-50/60" : "hover:bg-slate-50"}`}>
+                      <label key={p.id} className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${selected ? "bg-[#e8f2fb]/60" : "hover:bg-slate-50"}`}>
                         <input type="checkbox" checked={selected} onChange={() => toggleProduct(p.id)}
-                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 shrink-0" />
+                          className="rounded border-slate-300 text-[#006cd2] focus:ring-[#006cd2] h-4 w-4 shrink-0" />
                         {p.imageUrl ? (
-                          <img src={p.imageUrl} alt={p.title} className="h-9 w-9 rounded-lg object-cover shrink-0 border border-slate-200" />
+                          <img src={p.imageUrl} alt={p.title} className="h-9 w-9 rounded-none object-cover shrink-0 border border-slate-200" />
                         ) : (
-                          <div className="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                          <div className="h-9 w-9 rounded-none bg-slate-100 flex items-center justify-center shrink-0">
                             <Package className="h-4 w-4 text-slate-400" />
                           </div>
                         )}
@@ -231,7 +231,7 @@ export default function ProgramSettingsForm({
                           <p className="text-sm font-medium text-slate-800 truncate">{p.title}</p>
                           <p className="text-xs text-slate-400">{p.price ? `$${p.price.toFixed(2)}` : "—"} · {p.handle}</p>
                         </div>
-                        {selected && <CheckCircle2 className="h-4 w-4 text-indigo-500 shrink-0" />}
+                        {selected && <CheckCircle2 className="h-4 w-4 text-[#006cd2] shrink-0" />}
                       </label>
                     );
                   })}
@@ -240,7 +240,7 @@ export default function ProgramSettingsForm({
                   <span>{products.length} products · {selectedIds.size} selected</span>
                   <div className="flex gap-3">
                     <button type="button" onClick={() => setSelectedIds(new Set(products.map(p => p.id)))}
-                      className="text-indigo-600 hover:text-indigo-700 font-medium">All</button>
+                      className="text-[#006cd2] hover:text-[#0053a3] font-medium">All</button>
                     <button type="button" onClick={() => setSelectedIds(new Set())}
                       className="text-slate-500 hover:text-slate-700 font-medium">None</button>
                   </div>
@@ -305,16 +305,16 @@ export default function ProgramSettingsForm({
 
       {/* ── Feedback ─────────────────────────────────────────────────── */}
       {error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-none bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
       {saved && (
-        <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 flex items-center gap-2">
+        <div className="rounded-none bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4" /> Changes saved successfully.
         </div>
       )}
 
       <button type="submit" disabled={loading}
-        className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3 text-sm font-semibold text-white hover:brightness-105 disabled:opacity-60 transition-all shadow-md">
+        className="w-full inline-flex items-center justify-center gap-2 rounded-none bg-gradient-to-r bg-[#006cd2] px-5 py-3 text-sm font-semibold text-white hover:brightness-105 disabled:opacity-60 transition-all shadow-md">
         {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</> : "Save changes"}
       </button>
 
@@ -322,7 +322,7 @@ export default function ProgramSettingsForm({
       <div className="border-t border-slate-100 pt-5">
         <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Danger zone</p>
         <button type="button" onClick={onDelete} disabled={deleting}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60 transition-colors">
+          className="w-full inline-flex items-center justify-center gap-2 rounded-none border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60 transition-colors">
           {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
           Delete program
         </button>
