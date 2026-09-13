@@ -1,12 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { Nav } from "./components/landing/Nav";
-import { Hero } from "./components/landing/Hero";
-import { HowItWorks } from "./components/landing/HowItWorks";
-import { Features } from "./components/landing/Features";
-import { Pricing } from "./components/landing/Pricing";
-import { ClosingCta } from "./components/landing/ClosingCta";
-import { Footer } from "./components/landing/Footer";
+import LandingHero from "./components/landing/LandingHero";
 
 export default async function Home({
   searchParams,
@@ -15,28 +9,12 @@ export default async function Home({
 }) {
   const params = await searchParams;
 
-  // Unified.to sometimes appends errors to the root URL instead of using
-  // the error_redirect — catch them here and forward to the connect page.
+  // Unified.to sometimes appends errors to the root URL — forward them.
   if (params.error) {
     redirect("/dashboard/connect-shopify?error=unified-integration-disabled");
   }
 
   const session = await getSession();
-  const navUser = session
-    ? { id: session.userId, name: "", email: "", role: session.role }
-    : null;
 
-  return (
-    <>
-      <Nav initialUser={navUser} />
-      <main className="flex-1">
-        <Hero />
-        <HowItWorks />
-        <Features />
-        <Pricing />
-        <ClosingCta />
-      </main>
-      <Footer />
-    </>
-  );
+  return <LandingHero isLoggedIn={!!session} />;
 }
