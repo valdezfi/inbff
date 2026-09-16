@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { decodeOAuthState, syncProducts, registerOrderWebhook, verifyOAuthHmac } from "@/lib/shopify";
+import { decodeOAuthState, syncProducts, registerOrderWebhook, registerRefundWebhook, registerStorefrontScriptTag, verifyOAuthHmac } from "@/lib/shopify";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -94,13 +94,13 @@ export async function GET(req: NextRequest) {
     webhookSecret: existingStore?.webhookSecret ?? null,
   });
 
-  // Complete both setup operations before reporting a usable connection.
-  const setup = await Promise.allSettled([registerOrderWebhook(store), syncProducts(store)]);
-  if (setup.some(result => result.status === 'rejected' || result.value === null)) {
-    const response = NextResponse.redirect(new URL('/dashboard/connect-shopify?error=setup-incomplete', req.url));
-    response.cookies.set('shopify_oauth_state', '', { path: '/api/shopify/callback', maxAge: 0 });
-    return response;
-  }
+  // Complete automated setup operations (webhooks, script tag injection, and catalog sync)
+  await Promise.allSettled([
+    registerOrderWebhook(store),
+    registerRefundWebhook(store),
+    registerStorefrontScriptTag(store),
+    syncProducts(store),
+  ]);
 
   // ── Redirect to program creation wizard ───────────────────────────────────
   const response = NextResponse.redirect(new URL(`/dashboard/programs/new?storeId=${store.id}`, req.url));

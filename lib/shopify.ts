@@ -247,6 +247,43 @@ export async function registerRefundWebhook(store: ShopifyStore): Promise<string
   return getWebhookSecret(store);
 }
 
+/**
+ * Automatically injects the storefront tracking script via Shopify ScriptTags API.
+ * This runs automatically on OAuth connection so the brand merchant never needs
+ * to open the Theme Customizer manually.
+ */
+export async function registerStorefrontScriptTag(store: ShopifyStore): Promise<boolean> {
+  if (!store.accessToken) return false;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) return false;
+
+  const scriptSrc = `${appUrl}/attribution.js`;
+
+  try {
+    const res = await fetch(`https://${store.shopDomain}/admin/api/2024-01/script_tags.json`, {
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": store.accessToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        script_tag: {
+          event: "onload",
+          src: scriptSrc,
+          display_scope: "online_store",
+        },
+      }),
+    });
+    if (res.ok) {
+      console.log(`[shopify] registered ScriptTag for ${store.shopDomain}`);
+      return true;
+    }
+  } catch (err) {
+    console.error(`[shopify] failed to register ScriptTag for ${store.shopDomain}:`, err);
+  }
+  return false;
+}
+
 // ─── Webhook HMAC verification ───────────────────────────────────────────────
 
 /**
