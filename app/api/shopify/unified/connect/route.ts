@@ -10,6 +10,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { getUnifiedRedirectUrls } from "@/lib/unified";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -18,7 +19,6 @@ export async function POST(req: NextRequest) {
   }
 
   const workspaceId = process.env.NEXT_PUBLIC_UNIFIED_WORKSPACE_ID || process.env.UNIFIED_WORKSPACE_ID;
-  const appUrl      = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || req.nextUrl.origin || "http://localhost:3000";
 
   if (!workspaceId) {
     return NextResponse.json(
@@ -34,8 +34,7 @@ export async function POST(req: NextRequest) {
     JSON.stringify({ userId: session.userId, shopDomain: body.shopDomain ?? "" })
   ).toString("base64url");
 
-  const callbackUrl      = `${appUrl}/api/shopify/unified/callback`;
-  const errorRedirectUrl = `${appUrl}/dashboard/connect-shopify?error=unified-integration-disabled`;
+  const { callbackUrl, errorRedirectUrl } = getUnifiedRedirectUrls(req.url, state);
 
   // external_xref = your internal userId so Unified.to associates the
   // Shopify connection with the correct brand account in their system.
@@ -44,7 +43,7 @@ export async function POST(req: NextRequest) {
     `https://api.unified.to/unified/integration/auth/${workspaceId}/shopify` +
     `?redirect=true` +
     `&external_xref=${encodeURIComponent(session.userId)}` +
-    `&success_redirect=${encodeURIComponent(`${callbackUrl}?state=${state}`)}` +
+    `&success_redirect=${encodeURIComponent(callbackUrl)}` +
     `&failure_redirect=${encodeURIComponent(errorRedirectUrl)}` +
     `&error_redirect=${encodeURIComponent(errorRedirectUrl)}`;
 

@@ -85,10 +85,12 @@ Copy `.env.example` to `.env.local` and fill in values:
 | `AUTH_SECRET` | **Always** | Secret for signing JWT session tokens. Run `openssl rand -hex 32`. |
 | `MYSQL_URL` | Production | MySQL 8+ connection string (`mysql://user:pass@host:3306/db`). If unset, uses `data/db.json`. |
 | `MYSQL_SSL` | Production | Set to `false` to disable TLS (needed for local Docker MySQL). Defaults to enabled. |
-| `NEXT_PUBLIC_APP_URL` | Production / Shopify | Full public URL, e.g. `https://inbff.com`; this is also the canonical OAuth callback host. |
-| `SHOPIFY_API_KEY` | Shopify | From Shopify Partners → App setup. |
-| `SHOPIFY_API_SECRET` | Shopify | Used for OAuth, token exchange, and Shopify order-webhook HMAC verification. |
-| `SHOPIFY_SCOPES` | Shopify | `read_orders,read_products` for order attribution and catalog eligibility. |
+| `NEXT_PUBLIC_APP_URL` | Production / Unified.to | Full public URL, e.g. `https://inbff.com`; Unified.to returns the completed connection to this host. |
+| `NEXT_PUBLIC_UNIFIED_WORKSPACE_ID` | Unified.to | Workspace ID used to start a Shopify connection. |
+| `UNIFIED_API_KEY` | Unified.to | Server-side key used to fetch connection details and sync products. |
+| `UNIFIED_WEBHOOK_SECRET` | Unified.to | Secret for verifying Unified.to order webhook signatures. |
+| `SHOPIFY_API_KEY` | Optional native OAuth | Required only if the direct Shopify OAuth route is enabled later. |
+| `SHOPIFY_API_SECRET` | Optional native OAuth | Required only if the direct Shopify OAuth route is enabled later. |
 | `SHOPIFY_WEBHOOK_SECRET` | Legacy only | Temporary fallback while migrating an existing deployment; native Shopify webhooks use `SHOPIFY_API_SECRET`. |
 | `STRIPE_SECRET_KEY` | Payouts | Stripe platform secret key for Connect transfers. |
 | `MAILGUN_API_KEY` | Email | Mailgun private API key. If unset, emails are logged to stdout. |
@@ -112,19 +114,22 @@ this against an empty database.
 
 ---
 
-## Shopify production checklist
+## Unified.to Shopify production checklist
 
-1. In Shopify Partner Dashboard → **App setup**, set the **App URL** to
-   `https://inbff.com`, and add `https://inbff.com/api/shopify/callback` as an
-   allowed redirection URL. Shopify requires these to use the same host.
-2. Set `NEXT_PUBLIC_APP_URL=https://inbff.com`, `SHOPIFY_API_KEY`, and
-   `SHOPIFY_API_SECRET` in the host environment. Reconnect a store after
-   changing scopes.
-3. Deploy `extensions/referly-attribution` with Shopify CLI as this app's theme
+1. Set `NEXT_PUBLIC_APP_URL=https://inbff.com`,
+   `NEXT_PUBLIC_UNIFIED_WORKSPACE_ID`, and `UNIFIED_API_KEY` in the host
+   environment.
+2. In the Unified.to workspace, enable the Shopify integration and configure
+   its Shopify OAuth app URL and redirect URL to use the same host:
+   `https://inbff.com` and
+   `https://inbff.com/api/shopify/unified/callback`.
+3. Use a Unified.to production-capable plan for live store connections; the
+   Test Plan inserts a test-only authorization screen.
+4. Deploy `extensions/referly-attribution` with Shopify CLI as this app's theme
    extension. In each connected store, activate **Affiliate attribution** in
    **Online Store → Themes → Customize → App embeds**. This is what writes a
    referral code into Shopify's cart before checkout.
-4. Place an order through a generated referral link and confirm the
+5. Place an order through a generated referral link and confirm the
    `orders/create` webhook reaches `/api/webhooks/orders`. The endpoint accepts
    only Shopify HMAC signatures made with `SHOPIFY_API_SECRET`.
 
