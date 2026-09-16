@@ -36,10 +36,21 @@ export default async function MarketplacePage({
     ? { id: session.userId, name: "", email: "", role: session.role }
     : null;
 
-  const [{ programs, total }, stats] = await Promise.all([
-    db.findActivePrograms({ category, sort, search, type, page }),
-    db.getMarketplaceStats(),
-  ]);
+  let programs: MarketplaceProgram[] = [];
+  let total = 0;
+  let stats = { totalPrograms: 0, totalAffiliates: 0, totalPaid: 0 };
+
+  try {
+    const [progData, statsData] = await Promise.all([
+      db.findActivePrograms({ category, sort, search, type, page }),
+      db.getMarketplaceStats(),
+    ]);
+    programs = progData.programs || [];
+    total = progData.total || 0;
+    stats = statsData || stats;
+  } catch (err) {
+    console.error("[marketplace] failed to load active programs:", err);
+  }
 
   const hasMore    = page * 20 < total;
   const hasPrev    = page > 1;

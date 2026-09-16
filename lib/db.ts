@@ -369,9 +369,11 @@ export async function findActivePrograms(opts: {
   category?: string; minRate?: number; type?: string;
   sort?: string; search?: string; page?: number;
 }): Promise<{ programs: MarketplaceProgram[]; total: number }> {
-  const { category, minRate, type, sort = 'recent', search, page = 1 } = opts;
+  const { category, minRate, type, sort = 'recent', search } = opts;
+  const rawPage = opts.page;
+  const page = Math.max(1, Number.isFinite(Number(rawPage)) && Number(rawPage) >= 1 ? Math.floor(Number(rawPage)) : 1);
   const limit = 20;
-  const offset = (page - 1) * limit;
+  const offset = Math.max(0, (page - 1) * limit);
 
   if (!useMySQL) {
     let list = getJson().read().programs.filter(p => p.status === 'active');
@@ -423,11 +425,11 @@ export async function findActivePrograms(opts: {
     JOIN shopify_stores ss ON ss.id = ap.store_id
     WHERE ${where}
     ORDER BY ${order}
-    LIMIT ? OFFSET ?`, [...values, limit, offset]);
+    LIMIT ${limit} OFFSET ${offset}`, values);
 
   interface CountRow extends RowDataPacket { c: number; }
   const countRows = await q<CountRow>(`SELECT COUNT(*) AS c FROM affiliate_programs ap WHERE ${where}`, values);
-  return { programs: programs as unknown as MarketplaceProgram[], total: countRows[0]?.c ?? 0 };
+  return { programs: programs as unknown as MarketplaceProgram[], total: Number(countRows[0]?.c ?? 0) };
 }
 
 export async function createProgram(program: Omit<AffiliateProgram, 'createdAt'>): Promise<AffiliateProgram> {
