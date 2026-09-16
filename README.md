@@ -119,17 +119,23 @@ this against an empty database.
 1. Set `NEXT_PUBLIC_APP_URL=https://inbff.com`,
    `NEXT_PUBLIC_UNIFIED_WORKSPACE_ID`, and `UNIFIED_API_KEY` in the host
    environment.
-2. In the Unified.to workspace, enable the Shopify integration and configure
-   its Shopify OAuth app URL and redirect URL to use the same host:
-   `https://inbff.com` and
-   `https://inbff.com/api/shopify/unified/callback`.
-3. Use a Unified.to production-capable plan for live store connections; the
+2. In Unified.to → **Integrations** → **Shopify**, activate the integration in
+   the **Production** environment. If Unified asks for Shopify OAuth client
+   credentials, create/configure that Shopify app with application URL
+   `https://api.unified.to` and redirect URL
+   `https://api.unified.to/oauth/code`. These two Shopify-side values must use
+   the same host.
+3. Do not add the inBFF callback to the Shopify app. The application sends
+   Unified `https://inbff.com/api/shopify/unified/callback` as its
+   `success_redirect`; Unified redirects there only after Shopify authorization
+   has completed.
+4. Use a Unified.to production-capable plan for live store connections; the
    Test Plan inserts a test-only authorization screen.
-4. Deploy `extensions/referly-attribution` with Shopify CLI as this app's theme
+5. Deploy `extensions/referly-attribution` with Shopify CLI as this app's theme
    extension. In each connected store, activate **Affiliate attribution** in
    **Online Store → Themes → Customize → App embeds**. This is what writes a
    referral code into Shopify's cart before checkout.
-5. Place an order through a generated referral link and confirm the
+6. Place an order through a generated referral link and confirm the
    `orders/create` webhook reaches `/api/webhooks/orders`. The endpoint accepts
    only Shopify HMAC signatures made with `SHOPIFY_API_SECRET`.
 
