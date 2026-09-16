@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { getAuthenticatedHomePath } from "@/lib/navigation";
 import { Nav } from "./components/landing/Nav";
 import { Hero } from "./components/landing/Hero";
 import { HowItWorks } from "./components/landing/HowItWorks";
@@ -22,13 +23,13 @@ export default async function Home({
   }
 
   const session = await getSession();
-  const navUser = session
-    ? { id: session.userId, name: "", email: "", role: session.role }
-    : null;
+  if (session) {
+    redirect(getAuthenticatedHomePath(session.role));
+  }
 
   return (
     <>
-      <Nav initialUser={navUser} />
+      <Nav />
       <main className="flex-1">
         <Hero />
         <HowItWorks />

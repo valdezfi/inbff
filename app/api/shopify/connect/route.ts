@@ -16,6 +16,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { getShopifyRedirectUri } from "@/lib/shopify";
 import { z } from "zod";
 
 const schema = z.object({
@@ -48,10 +49,10 @@ export async function POST(req: NextRequest) {
 
   const shopDomain = `${parsed.data.shopDomain.toLowerCase()}.myshopify.com`;
   const apiKey     = process.env.SHOPIFY_API_KEY;
-  const redirectUri = process.env.SHOPIFY_REDIRECT_URI;
+  const redirectUri = getShopifyRedirectUri(process.env.NEXT_PUBLIC_APP_URL, req.url);
   const scopes     = process.env.SHOPIFY_SCOPES ?? "read_orders,read_products";
 
-  if (!apiKey || !redirectUri) {
+  if (!apiKey) {
     return NextResponse.json(
       { error: "Shopify API credentials are not configured for direct connection. Please use the Unified.to connection or configure the environment variables." },
       { status: 503 }

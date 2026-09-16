@@ -85,10 +85,9 @@ Copy `.env.example` to `.env.local` and fill in values:
 | `AUTH_SECRET` | **Always** | Secret for signing JWT session tokens. Run `openssl rand -hex 32`. |
 | `MYSQL_URL` | Production | MySQL 8+ connection string (`mysql://user:pass@host:3306/db`). If unset, uses `data/db.json`. |
 | `MYSQL_SSL` | Production | Set to `false` to disable TLS (needed for local Docker MySQL). Defaults to enabled. |
-| `NEXT_PUBLIC_APP_URL` | Production | Full public URL, e.g. `https://inbff.app`. |
+| `NEXT_PUBLIC_APP_URL` | Production / Shopify | Full public URL, e.g. `https://inbff.com`; this is also the canonical OAuth callback host. |
 | `SHOPIFY_API_KEY` | Shopify | From Shopify Partners → App setup. |
 | `SHOPIFY_API_SECRET` | Shopify | Used for OAuth, token exchange, and Shopify order-webhook HMAC verification. |
-| `SHOPIFY_REDIRECT_URI` | Shopify | OAuth callback URL registered in your Shopify app. |
 | `SHOPIFY_SCOPES` | Shopify | `read_orders,read_products` for order attribution and catalog eligibility. |
 | `SHOPIFY_WEBHOOK_SECRET` | Legacy only | Temporary fallback while migrating an existing deployment; native Shopify webhooks use `SHOPIFY_API_SECRET`. |
 | `STRIPE_SECRET_KEY` | Payouts | Stripe platform secret key for Connect transfers. |
@@ -115,11 +114,12 @@ this against an empty database.
 
 ## Shopify production checklist
 
-1. Create a Shopify app and configure its allowed redirection URL as
-   `https://<your-app-domain>/api/shopify/callback`.
-2. Set `NEXT_PUBLIC_APP_URL` to that same HTTPS domain, then set
-   `SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`, and `SHOPIFY_REDIRECT_URI` in the
-   host environment. Reconnect a store after changing scopes.
+1. In Shopify Partner Dashboard → **App setup**, set the **App URL** to
+   `https://inbff.com`, and add `https://inbff.com/api/shopify/callback` as an
+   allowed redirection URL. Shopify requires these to use the same host.
+2. Set `NEXT_PUBLIC_APP_URL=https://inbff.com`, `SHOPIFY_API_KEY`, and
+   `SHOPIFY_API_SECRET` in the host environment. Reconnect a store after
+   changing scopes.
 3. Deploy `extensions/referly-attribution` with Shopify CLI as this app's theme
    extension. In each connected store, activate **Affiliate attribution** in
    **Online Store → Themes → Customize → App embeds**. This is what writes a

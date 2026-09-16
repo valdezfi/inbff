@@ -17,20 +17,26 @@ function ConnectShopifyInner() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
+  const [shopDomain, setShopDomain] = useState("");
 
   useEffect(() => {
     const e = searchParams.get("error");
     if (e) setError(errorMessages[e] ?? "Something went wrong during Shopify authorization.");
   }, [searchParams]);
 
-  async function connectUnified() {
+  async function connectShopify() {
     setError(null);
+    const normalizedDomain = shopDomain.trim().replace(/^https?:\/\//, "").replace(/\.myshopify\.com\/?$/, "").replace(/\/$/, "");
+    if (!normalizedDomain) {
+      setError("Enter your Shopify store name to continue.");
+      return;
+    }
     setLoading(true);
     try {
-      const res  = await fetch("/api/shopify/unified/connect", {
+      const res  = await fetch("/api/shopify/connect", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({}),
+        body:    JSON.stringify({ shopDomain: normalizedDomain }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -98,8 +104,28 @@ function ConnectShopifyInner() {
           ))}
         </div>
 
+        <label className="block text-sm font-semibold text-slate-700 mb-2" htmlFor="shop-domain">
+          Shopify store name
+        </label>
+        <div className="flex items-center rounded-xl border border-indigo-200 bg-white overflow-hidden mb-5 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500">
+          <input
+            id="shop-domain"
+            type="text"
+            value={shopDomain}
+            onChange={(event) => setShopDomain(event.target.value)}
+            placeholder="your-store"
+            autoComplete="off"
+            className="min-w-0 flex-1 px-4 py-3 text-sm text-slate-900 outline-none"
+            aria-describedby="shop-domain-help"
+          />
+          <span className="pr-4 text-sm text-slate-500 whitespace-nowrap">.myshopify.com</span>
+        </div>
+        <p id="shop-domain-help" className="text-xs text-slate-500 -mt-3 mb-5">
+          Enter the name before <span className="font-medium">.myshopify.com</span>.
+        </p>
+
         <button
-          onClick={connectUnified}
+          onClick={connectShopify}
           disabled={loading}
           className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:brightness-105 transition-all disabled:opacity-60"
         >

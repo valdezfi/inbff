@@ -233,6 +233,12 @@ export function verifyWebhookHmac(
 
 // ─── OAuth helpers ────────────────────────────────────────────────────────────
 
+/** Build a callback URL under the same canonical origin as the app. */
+export function getShopifyRedirectUri(appUrl: string | undefined, requestUrl: string): string {
+  const origin = new URL(appUrl ?? requestUrl).origin;
+  return new URL("/api/shopify/callback", origin).toString();
+}
+
 /** Verify Shopify OAuth HMAC on the callback query params. */
 export function verifyOAuthHmac(
   searchParams: URLSearchParams,

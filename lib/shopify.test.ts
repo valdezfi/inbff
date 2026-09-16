@@ -1,6 +1,6 @@
 import { createHmac } from "crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { decodeOAuthState, getWebhookSecret, verifyWebhookHmac } from "./shopify";
+import { decodeOAuthState, getShopifyRedirectUri, getWebhookSecret, verifyWebhookHmac } from "./shopify";
 import type { ShopifyStore } from "./types";
 
 const store: ShopifyStore = {
@@ -26,5 +26,17 @@ describe("Shopify OAuth state", () => {
     const state = Buffer.from(JSON.stringify({ nonce: "csrf-token-123456", shopDomain: "brand.myshopify.com" })).toString("base64url");
     expect(decodeOAuthState(state)).toEqual({ nonce: "csrf-token-123456", shopDomain: "brand.myshopify.com" });
     expect(decodeOAuthState("not-base64-state")).toBeNull();
+  });
+});
+
+describe("Shopify OAuth redirect URI", () => {
+  it("uses the canonical application host for the callback", () => {
+    expect(getShopifyRedirectUri("https://inbff.com/", "http://localhost:3000/api/shopify/connect"))
+      .toBe("https://inbff.com/api/shopify/callback");
+  });
+
+  it("uses the incoming host when no canonical application URL is configured", () => {
+    expect(getShopifyRedirectUri(undefined, "https://preview.inbff.com/api/shopify/connect"))
+      .toBe("https://preview.inbff.com/api/shopify/callback");
   });
 });
