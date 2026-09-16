@@ -22,18 +22,20 @@ export default function AffiliatePayoutClient({
   const [payingId, setPayingId]     = useState<string | null>(null);
   const [paid, setPaid]             = useState<Set<string>>(new Set());
   const [error, setError]           = useState<string | null>(null);
-  const [toast,  setToast]          = useState<string | null>(null);
+  const [toast] = useState<string | null>(() => {
+    if (searchParams.get("connected") === "1") return "Stripe onboarding returned. Account verification may still be required before payouts.";
+    if (searchParams.get("refresh") === "1") return "Stripe onboarding session expired — please try again.";
+    return null;
+  });
 
   // Handle ?connected=1 and ?refresh=1 returned by Stripe after onboarding
   useEffect(() => {
     const connected = searchParams.get("connected");
     const refresh   = searchParams.get("refresh");
     if (connected === "1") {
-      setToast("Stripe account connected! You can now request payouts.");
       router.replace("/affiliate/payouts");
       router.refresh();
     } else if (refresh === "1") {
-      setToast("Stripe onboarding session expired — please try again.");
       router.replace("/affiliate/payouts");
     }
   }, [searchParams, router]);
@@ -61,15 +63,23 @@ export default function AffiliatePayoutClient({
 
   async function handlePayout(programId: string) {
     setPayingId(programId); setError(null);
+    try {
     const res = await fetch("/api/affiliate/payout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ programId }),
     });
     const data = await res.json();
-    setPayingId(null);
     if (res.ok) { setPaid(prev => new Set([...prev, programId])); setTimeout(() => router.refresh(), 800); }
-    else setError(data.error ?? "Payout failed.");
+    else {
+      setError(data.error ?? "Payout failed.");
+      if (data.paid > 0) router.refresh();
+    }
+    } catch {
+      setError("Network error. Refresh to check payment status before retrying.");
+    } finally {
+      setPayingId(null);
+    }
   }
 
   return (

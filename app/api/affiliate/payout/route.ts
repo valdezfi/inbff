@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHash } from "crypto";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { z } from "zod";
@@ -25,16 +24,21 @@ export async function POST(req: NextRequest) {
   const program = await db.findProgramById(parsed.data.programId);
   if (!program) return NextResponse.json({ error: "Program not found." }, { status: 404 });
 
-  const pending = await db.findPendingCommissionsByAffiliateAndProgram(affiliate.id, program.id);
+  const pending = (await db.findPendingCommissionsByAffiliateAndProgram(affiliate.id, program.id))
+    .filter(commission => Number.isFinite(commission.amount) && Math.round(commission.amount * 100) > 0);
   const total = pending.reduce((s, c) => s + c.amount, 0);
 
-  if (total < program.payoutThreshold) {
+  if (pending.length === 0 || total <= 0 || total < program.payoutThreshold) {
     return NextResponse.json({
       error: `Minimum payout threshold is $${program.payoutThreshold.toFixed(2)}. You have $${total.toFixed(2)} pending.`,
     }, { status: 400 });
   }
 
-  let stripeTransferId: string | null = null;
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json({ error: "Online payouts are not configured. Contact the brand to arrange payment; your earnings remain pending." }, { status: 409 });
+  }
+  let paid = 0;
+  let paidTotal = 0;
 
   if (process.env.STRIPE_SECRET_KEY) {
     // Stripe is configured platform-wide — a transfer is required, not
@@ -51,39 +55,32 @@ export async function POST(req: NextRequest) {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: "2026-06-24.dahlia" as Stripe.LatestApiVersion,
     });
-    const amountCents = Math.round(total * 100);
+    for (const commission of pending) {
+    const amountCents = Math.round(commission.amount * 100);
     try {
       const transfer = await stripe.transfers.create(
         {
           amount: amountCents,
           currency: program.currency.toLowerCase(),
           destination: user.stripeAccountId,
-          description: `inBFF payout — ${program.name}`,
-          metadata: { affiliateId: affiliate.id, programId: program.id },
+          description: `inBFF commission payout — ${program.name}`,
+          metadata: { commissionId: commission.id, affiliateId: affiliate.id, programId: program.id },
         },
         {
-          // Same idempotency intent as the brand-initiated payout routes —
-          // a retried request pays out this exact batch once, not twice.
-          // Hashed (rather than joined raw) so the key stays well under
-          // Stripe's length limit no matter how many commissions batch in.
-          idempotencyKey: `affiliate-payout-${createHash("sha256")
-            .update(pending.map(c => c.id).sort().join(","))
-            .digest("hex")}`,
+          idempotencyKey: `payout-${commission.id}`,
         }
       );
-      stripeTransferId = transfer.id;
+      await db.markCommissionPaid(commission.id, transfer.id);
+      paid++;
+      paidTotal += commission.amount;
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Stripe transfer failed.";
-      return NextResponse.json({ error: `Payment failed: ${msg}` }, { status: 502 });
+      const recovery = paid > 0
+        ? ` ${paid} commission(s) were paid. Ask the brand to settle the remaining balance if it is below the payout threshold.`
+        : '';
+      return NextResponse.json({ error: `Payment failed: ${msg}.${recovery}`, paid, total: paidTotal }, { status: 502 });
+    }
     }
   }
-  // No STRIPE_SECRET_KEY → manual mode: mark paid without a transfer,
-  // same explicit behavior as the brand-initiated payout routes.
-
-  // Mark all pending commissions as paid
-  const updated = await Promise.all(
-    pending.map(c => db.markCommissionPaid(c.id, stripeTransferId))
-  );
-
-  return NextResponse.json({ paid: updated.length, total, stripeTransferId });
+  return NextResponse.json({ paid, total: Math.round(paidTotal * 100) / 100 });
 }

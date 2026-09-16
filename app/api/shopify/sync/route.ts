@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { syncProducts, syncUnifiedProducts } from "@/lib/shopify";
+import { syncProducts } from "@/lib/shopify";
 import { z } from "zod";
 
 export async function POST(req: NextRequest) {
@@ -16,15 +16,14 @@ export async function POST(req: NextRequest) {
   const store = stores.find(s => s.id === parsed.data.storeId);
   if (!store) return NextResponse.json({ error: "Store not found." }, { status: 404 });
 
-  if (!store.accessToken) {
+  if (!store.accessToken || store.accessToken.startsWith('unified:')) {
     return NextResponse.json({ error: "Store has no access token — complete OAuth first." }, { status: 400 });
   }
 
-  // Unified.to-connected stores hold `unified:<connectionId>` as their
-  // "access token" — that's not a real Shopify token, so it must go
-  // through the Unified.to product API, never the native Shopify sync.
-  const count = store.accessToken.startsWith("unified:")
-    ? await syncUnifiedProducts(store)
-    : await syncProducts(store);
-  return NextResponse.json({ synced: count });
+  try {
+    const count = await syncProducts(store);
+    return NextResponse.json({ synced: count });
+  } catch {
+    return NextResponse.json({ error: 'Shopify product sync failed. Reconnect the store or retry.' }, { status: 502 });
+  }
 }

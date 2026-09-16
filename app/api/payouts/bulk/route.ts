@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
             amount:      Math.round(commission.amount * 100),
             currency:    program.currency.toLowerCase(),
             destination: user.stripeAccountId,
-            description: `inBFF bulk payout — ${program.name}`,
+            description: `inBFF commission payout — ${program.name}`,
             metadata: {
               commissionId: commission.id,
               programId:    program.id,

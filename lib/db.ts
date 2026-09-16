@@ -71,13 +71,10 @@ function getJson(): { read: () => DB; tx: <T>(fn: (db: DB) => T) => Promise<T> }
           return d;
         }
         const raw = fs.readFileSync(DB_PATH, 'utf-8').trim();
-        if (!raw) { const d = empty(); fs.writeFileSync(DB_PATH, JSON.stringify(d, null, 2)); return d; }
+        if (!raw) throw new Error('Database file is empty. Restore it from backup.');
         return { ...empty(), ...(JSON.parse(raw) as Partial<DB>) };
       } catch (e) {
-        console.warn('[db] db.json parse error, resetting:', e);
-        const d = empty();
-        fs.writeFileSync(DB_PATH, JSON.stringify(d, null, 2));
-        return d;
+        throw new Error('Unable to read database. Existing data has been preserved.', { cause: e });
       }
     };
     const writeDb = (db: DB) => fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
@@ -751,14 +748,18 @@ export async function findCommissionByOrderId(orderId: string): Promise<Commissi
 export async function createCommission(commission: Omit<Commission, 'createdAt' | 'paidAt' | 'stripeTransferId'>): Promise<Commission> {
   if (!useMySQL) {
     const n: Commission = { ...commission, createdAt: new Date().toISOString(), paidAt: null, stripeTransferId: null };
-    await getJson().tx(db => { db.commissions.push(n); });
-    return n;
+    return getJson().tx(db => {
+      const existing = db.commissions.find(c => c.orderId === commission.orderId);
+      if (existing) return existing;
+      db.commissions.push(n);
+      return n;
+    });
   }
   await exec(
-    `INSERT INTO commissions (id,order_id,affiliate_id,program_id,amount,rate,status) VALUES (?,?,?,?,?,?,?)`,
+    `INSERT INTO commissions (id,order_id,affiliate_id,program_id,amount,rate,status) VALUES (?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE id=id`,
     [commission.id, commission.orderId, commission.affiliateId, commission.programId, commission.amount, commission.rate, commission.status]
   );
-  const rows = await q<CommissionRow>(`SELECT ${COMMISSION_SELECT} FROM commissions WHERE id=? LIMIT 1`, [commission.id]);
+  const rows = await q<CommissionRow>(`SELECT ${COMMISSION_SELECT} FROM commissions WHERE order_id=? LIMIT 1`, [commission.orderId]);
   return rows[0]! as unknown as Commission;
 }
 

@@ -1,13 +1,17 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  ArrowLeft, Loader2, CheckCircle2, ExternalLink,
+  ArrowLeft, Loader2, ExternalLink,
   Zap, ShieldCheck, Package, Link2, RefreshCw, AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
 
 const errorMessages: Record<string, string> = {
+  "setup-incomplete": "Your store authorized successfully, but product sync or order tracking setup failed. Reconnect to retry setup.",
+  "not-configured": "Shopify connection is not configured yet. Contact the platform administrator.",
+  "invalid-hmac": "Shopify authorization could not be verified. Start the connection again.",
+  "token-exchange-failed": "Shopify authorization expired or failed. Start the connection again.",
   "invalid-state":                 "Session expired. Please try again.",
   "no-connection-id":              "Connection failed — please retry.",
   "unified-integration-disabled":  "Shopify integration is not enabled in your Unified.to workspace. Enable it in your Unified.to dashboard and try again.",
@@ -16,13 +20,11 @@ const errorMessages: Record<string, string> = {
 function ConnectShopifyInner() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => {
+    const code = searchParams.get("error");
+    return code ? errorMessages[code] ?? "Something went wrong during Shopify authorization." : null;
+  });
   const [shopDomain, setShopDomain] = useState("");
-
-  useEffect(() => {
-    const e = searchParams.get("error");
-    if (e) setError(errorMessages[e] ?? "Something went wrong during Shopify authorization.");
-  }, [searchParams]);
 
   async function connectShopify() {
     setError(null);

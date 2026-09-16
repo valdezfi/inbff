@@ -1,9 +1,9 @@
 # inBFF — Shopify Affiliate Program Platform
 
-A production-ready full-stack app: store owner connects Shopify → creates an
+A full-stack app: store owner connects Shopify → creates an
 affiliate program → affiliates join and get a unique referral link →
 customers click and get redirected to the real Shopify store → Shopify fires
-an `orders/create` webhook → we verify it with HMAC, calculate the commission →
+an `orders/paid` webhook → we verify it with HMAC, calculate the commission →
 pay it out via Stripe Connect.
 
 ---
@@ -85,12 +85,9 @@ Copy `.env.example` to `.env.local` and fill in values:
 | `AUTH_SECRET` | **Always** | Secret for signing JWT session tokens. Run `openssl rand -hex 32`. |
 | `MYSQL_URL` | Production | MySQL 8+ connection string (`mysql://user:pass@host:3306/db`). If unset, uses `data/db.json`. |
 | `MYSQL_SSL` | Production | Set to `false` to disable TLS (needed for local Docker MySQL). Defaults to enabled. |
-| `NEXT_PUBLIC_APP_URL` | Production / Unified.to | Full public URL, e.g. `https://inbff.com`; Unified.to returns the completed connection to this host. |
-| `NEXT_PUBLIC_UNIFIED_WORKSPACE_ID` | Unified.to | Workspace ID used to start a Shopify connection. |
-| `UNIFIED_API_KEY` | Unified.to | Server-side key used to fetch connection details and sync products. |
-| `UNIFIED_WEBHOOK_SECRET` | Unified.to | Secret for verifying Unified.to order webhook signatures. |
-| `SHOPIFY_API_KEY` | Optional native OAuth | Required only if the direct Shopify OAuth route is enabled later. |
-| `SHOPIFY_API_SECRET` | Optional native OAuth | Required only if the direct Shopify OAuth route is enabled later. |
+| `NEXT_PUBLIC_APP_URL` | Shopify OAuth | Canonical public URL, e.g. `https://inbff.com`. |
+| `SHOPIFY_API_KEY` | Shopify OAuth | Public Shopify app client ID. |
+| `SHOPIFY_API_SECRET` | Shopify OAuth | Server-only Shopify client secret, also used to verify webhooks. |
 | `SHOPIFY_WEBHOOK_SECRET` | Legacy only | Temporary fallback while migrating an existing deployment; native Shopify webhooks use `SHOPIFY_API_SECRET`. |
 | `STRIPE_SECRET_KEY` | Payouts | Stripe platform secret key for Connect transfers. |
 | `MAILGUN_API_KEY` | Email | Mailgun private API key. If unset, emails are logged to stdout. |
@@ -114,35 +111,37 @@ this against an empty database.
 
 ---
 
-## Unified.to Shopify production checklist
+## Native Shopify production checklist
 
-1. Set `NEXT_PUBLIC_APP_URL=https://inbff.com`,
-   `NEXT_PUBLIC_UNIFIED_WORKSPACE_ID`, and `UNIFIED_API_KEY` in the host
-   environment.
-2. In Unified.to → **Integrations** → **Shopify**, activate the integration in
-   the **Production** environment. If Unified asks for Shopify OAuth client
-   credentials, create/configure that Shopify app with application URL
-   `https://api.unified.to` and redirect URL
-   `https://api.unified.to/oauth/code`. These two Shopify-side values must use
-   the same host.
-3. Do not add the inBFF callback to the Shopify app. The application sends
-   Unified `https://inbff.com/api/shopify/unified/callback` as its
-   `success_redirect`; Unified redirects there only after Shopify authorization
-   has completed.
-4. Use a Unified.to production-capable plan for live store connections; the
-   Test Plan inserts a test-only authorization screen.
-5. Deploy `extensions/referly-attribution` with Shopify CLI as this app's theme
+1. Configure the public Shopify app with application URL `https://inbff.com`
+   and allowed redirect URL `https://inbff.com/api/shopify/callback`.
+   Do not use Unified's host for this native integration.
+2. Set `NEXT_PUBLIC_APP_URL=https://inbff.com`, `SHOPIFY_API_KEY`, and
+   `SHOPIFY_API_SECRET` in the deployment environment. Current catalog/order
+   functionality requests `read_products,read_orders`.
+3. Sign in as a brand and connect the store from **Connect Shopify**. Reconnect
+   existing stores after this update to register the `orders/paid` subscription.
+   Legacy Unified tokens cannot be used with Shopify's Admin API.
+4. Deploy `extensions/referly-attribution` with Shopify CLI as this app's theme
    extension. In each connected store, activate **Affiliate attribution** in
    **Online Store → Themes → Customize → App embeds**. This is what writes a
    referral code into Shopify's cart before checkout.
-6. Place an order through a generated referral link and confirm the
-   `orders/create` webhook reaches `/api/webhooks/orders`. The endpoint accepts
+5. Place a paid test order through a generated referral link and confirm the
+   `orders/paid` webhook reaches `/api/webhooks/orders`. The endpoint accepts
    only Shopify HMAC signatures made with `SHOPIFY_API_SECRET`.
 
 The app uses the supported Shopify Admin GraphQL API for product sync and
 webhook subscriptions. Accelerated checkout can bypass cart attributes; the
-webhook also falls back to the order landing URL, and never awards a commission
-when the affiliate, program, store, or attribution window cannot be verified.
+webhook also falls back to the order landing URL. Selected products are matched
+using Shopify product IDs; commissions use line prices less allocated discounts,
+excluding shipping. Currency must match the program; no conversion is performed.
+
+Stripe transfers use a per-commission idempotency key across creator, single,
+and bulk payout routes. Creators cannot mark themselves paid when Stripe is
+unconfigured; brands can record externally completed payments manually.
+Provider integration and end-to-end purchase/refund tests are still required
+before treating the platform as production-ready. Refund reversal, brand funding
+accounting, and the remaining PRD extensions are not certified by unit tests.
 
 ---
 

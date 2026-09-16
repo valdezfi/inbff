@@ -5,8 +5,8 @@
  * - Verifies HMAC signature on all query params
  * - Exchanges the temporary code for a permanent access token
  * - Upserts the store record (one per brand per shopDomain)
- * - Registers the orders/create webhook with a per-store secret
- * - Syncs the product catalog in the background
+ * - Registers the orders/paid webhook signed with the app client secret
+ * - Waits for webhook registration and product sync before reporting success
  * - Redirects to the program setup wizard
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -74,7 +74,10 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const { access_token: accessToken } = await tokenRes.json() as { access_token: string };
+  const { access_token: accessToken } = await tokenRes.json() as { access_token?: string };
+  if (!accessToken || typeof accessToken !== 'string') {
+    return NextResponse.redirect(new URL('/dashboard/connect-shopify?error=token-exchange-failed', req.url));
+  }
 
   // ── Upsert store (preserves existing webhookSecret if reconnecting) ────────
   // Scoped to this user — a global domain lookup would collide with (and
@@ -91,11 +94,13 @@ export async function GET(req: NextRequest) {
     webhookSecret: existingStore?.webhookSecret ?? null,
   });
 
-  // ── Register webhook + sync products (background, non-blocking) ───────────
-  Promise.all([
-    registerOrderWebhook(store),
-    syncProducts(store),
-  ]).catch(err => console.error("[shopify callback] post-auth tasks failed:", err));
+  // Complete both setup operations before reporting a usable connection.
+  const setup = await Promise.allSettled([registerOrderWebhook(store), syncProducts(store)]);
+  if (setup.some(result => result.status === 'rejected' || result.value === null)) {
+    const response = NextResponse.redirect(new URL('/dashboard/connect-shopify?error=setup-incomplete', req.url));
+    response.cookies.set('shopify_oauth_state', '', { path: '/api/shopify/callback', maxAge: 0 });
+    return response;
+  }
 
   // ── Redirect to program creation wizard ───────────────────────────────────
   const response = NextResponse.redirect(new URL(`/dashboard/programs/new?storeId=${store.id}`, req.url));

@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const redirectUri = getShopifyRedirectUri(process.env.NEXT_PUBLIC_APP_URL, req.url);
   const scopes     = process.env.SHOPIFY_SCOPES ?? "read_orders,read_products";
 
-  if (!apiKey) {
+  if (!apiKey || !process.env.SHOPIFY_API_SECRET) {
     return NextResponse.json(
       { error: "Shopify API credentials are not configured. Add SHOPIFY_API_KEY and SHOPIFY_API_SECRET to the deployment." },
       { status: 503 }

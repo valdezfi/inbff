@@ -1,9 +1,9 @@
 /**
  * POST /api/webhooks/orders
  *
- * Multi-tenant Shopify orders/create webhook.
+ * Multi-tenant Shopify orders/paid webhook.
  * Each brand's store is identified by the x-shopify-shop-domain header.
- * HMAC is verified using the per-store secret stored in DB (fallback: env SHOPIFY_WEBHOOK_SECRET).
+ * HMAC is verified using the Shopify app client secret.
  *
  * Attribution window + eligible product filtering enforced per-program.
  */
@@ -25,11 +25,12 @@ async function readRawBody(req: NextRequest): Promise<Buffer> {
   return Buffer.concat(chunks);
 }
 
-interface ShopifyLineItem { handle: string; price: string; quantity: number; }
+interface ShopifyLineItem { product_id: number | string | null; price: string; quantity: number; discount_allocations?: { amount: string }[]; }
 interface ShopifyOrderPayload {
   id: number;
   total_price: string;
   currency: string;
+  financial_status?: string;
   note_attributes?: { name: string; value: string }[];
   landing_site?: string;
   line_items?: ShopifyLineItem[];
@@ -64,6 +65,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
 
+  if (!payload || !payload.id || !Number.isFinite(Number(payload.total_price)) || Number(payload.total_price) < 0) {
+    return NextResponse.json({ error: "Invalid order payload." }, { status: 400 });
+  }
+  if (req.headers.get("x-shopify-topic") !== "orders/paid" || payload.financial_status !== "paid") {
+    return NextResponse.json({ ok: true, ignored: true });
+  }
+  if (Number(payload.total_price) === 0) return NextResponse.json({ ok: true });
   const shopifyOrderId = String(payload.id);
   const currency       = payload.currency ?? "USD";
 
@@ -88,7 +96,7 @@ export async function POST(req: NextRequest) {
 
   // ── Attribution window check ───────────────────────────────────────────────
   const lastClick = referralCode ? await db.findLatestClickByCode(referralCode) : null;
-  const withinWindow = !!affiliate && !!program && isAttributionEligible({
+  const withinWindow = !!affiliate && !!program && program.currency === currency && isAttributionEligible({
     affiliateActive: affiliate.status === "active",
     programActive: program.status === "active",
     programStoreId: program.storeId,
@@ -99,21 +107,28 @@ export async function POST(req: NextRequest) {
   });
 
   // ── Eligible product + amount calculation ─────────────────────────────────
-  let amount = parseFloat(payload.total_price);
+  let amount = 0;
+  let eligibleShopifyIds: Set<string> | null = null;
 
-  if (affiliate && program && !program.allProducts && payload.line_items?.length) {
+  if (affiliate && program && !program.allProducts) {
     const eligibleProductIds = await db.findProgramProductIds(program.id);
     const storeProducts      = await db.findProductsByStoreId(store.id);
-    const eligibleHandles    = new Set(
+    eligibleShopifyIds = new Set(
       storeProducts
         .filter(p => eligibleProductIds.includes(p.id))
-        .map(p => p.handle)
+        .map(p => p.shopifyProductId.split('/').pop()!)
     );
-    const eligibleItems = payload.line_items.filter(item => eligibleHandles.has(item.handle));
-    amount = eligibleItems.length === 0
-      ? 0
-      : eligibleItems.reduce((s, i) => s + parseFloat(i.price) * i.quantity, 0);
   }
+  for (const item of payload.line_items ?? []) {
+    if (eligibleShopifyIds && !eligibleShopifyIds.has(String(item.product_id))) continue;
+    const price = Number(item.price);
+    const discount = (item.discount_allocations ?? []).reduce((sum, allocation) => sum + Number(allocation.amount), 0);
+    if (!Number.isFinite(price) || price < 0 || !Number.isInteger(item.quantity) || item.quantity < 0 || !Number.isFinite(discount) || discount < 0) {
+      return NextResponse.json({ error: "Invalid line item." }, { status: 400 });
+    }
+    amount += Math.max(0, Math.round(price * 100) * item.quantity - Math.round(discount * 100));
+  }
+  amount = Math.min(amount / 100, Number(payload.total_price));
 
   // ── Record order (idempotent) ──────────────────────────────────────────────
   const order = await db.createOrder({
@@ -134,6 +149,9 @@ export async function POST(req: NextRequest) {
   if (affiliate && program && withinWindow && amount > 0 && !await db.findCommissionByOrderId(order.id)) {
     const commissionAmount =
       Math.round(amount * (program.commissionRate / 100) * 100) / 100;
+    if (!Number.isFinite(commissionAmount) || commissionAmount <= 0) {
+      return NextResponse.json({ ok: true, order: { id: order.id }, commission: null });
+    }
     commission = await db.createCommission({
       id:          nanoid(),
       orderId:     order.id,

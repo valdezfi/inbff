@@ -5,7 +5,7 @@
  * Shopify signs native app webhooks with this app's client secret.
  *
  * - syncProducts:            fetches the full product catalog (paginated) and upserts into DB
- * - registerOrderWebhook:    registers the orders/create webhook on the store
+ * - registerOrderWebhook:    registers the orders/paid webhook on the store
  * - getWebhookSecret:        returns the Shopify app client secret
  * - verifyWebhookHmac:       verifies a webhook payload for a specific store
  */
@@ -21,7 +21,7 @@ interface ShopifyGraphqlProduct {
   title: string;
   handle: string;
   featuredImage: { url: string } | null;
-  variants: { nodes: Array<{ price: { amount: string } }> };
+  variants: { nodes: Array<{ price: string }> };
 }
 
 async function adminGraphql<T>(store: ShopifyStore, query: string, variables: Record<string, unknown>): Promise<T | null> {
@@ -47,7 +47,9 @@ async function adminGraphql<T>(store: ShopifyStore, query: string, variables: Re
 
 /** Fetch and cache the full product catalog from Shopify (handles pagination). */
 export async function syncProducts(store: ShopifyStore): Promise<number> {
-  if (!store.accessToken) return 0;
+  if (!store.accessToken || store.accessToken.startsWith('unified:')) {
+    throw new Error('Please reconnect your store through Shopify.');
+  }
 
   let cursor: string | null | undefined = null;
   let total = 0;
@@ -60,11 +62,11 @@ export async function syncProducts(store: ShopifyStore): Promise<number> {
       };
     } | null = await adminGraphql(store, `query SyncProducts($cursor: String) {
       products(first: 100, after: $cursor) {
-        nodes { id title handle featuredImage { url } variants(first: 1) { nodes { price { amount } } } }
+        nodes { id title handle featuredImage { url } variants(first: 1) { nodes { price } } }
         pageInfo { hasNextPage endCursor }
       }
     }`, { cursor });
-    if (!data) break;
+    if (!data) throw new Error('Shopify product sync failed. Check store permissions and retry.');
     const products = data.products.nodes;
 
     await db.upsertProducts(
@@ -74,13 +76,17 @@ export async function syncProducts(store: ShopifyStore): Promise<number> {
         shopifyProductId: p.id,
         title: p.title,
         imageUrl: p.featuredImage?.url ?? null,
-        price: p.variants.nodes[0] ? parseFloat(p.variants.nodes[0].price.amount) : null,
+        price: p.variants.nodes[0] ? parseFloat(p.variants.nodes[0].price) : null,
         handle: p.handle,
       }))
     );
 
     total += products.length;
-    cursor = data.products.pageInfo.hasNextPage ? data.products.pageInfo.endCursor : undefined;
+    const nextCursor: string | null = data.products.pageInfo.endCursor;
+    if (data.products.pageInfo.hasNextPage && (!nextCursor || nextCursor === cursor)) {
+      throw new Error('Shopify returned an invalid product pagination cursor. Retry sync.');
+    }
+    cursor = data.products.pageInfo.hasNextPage ? nextCursor : undefined;
   }
 
   console.log(`[shopify] synced ${total} products for ${store.shopDomain}`);
@@ -141,7 +147,7 @@ export async function syncUnifiedProducts(store: ShopifyStore): Promise<number> 
 // ─── Webhook registration ─────────────────────────────────────────────────────
 
 /**
- * Register the orders/create webhook on the connected store.
+ * Register the orders/paid webhook on the connected store.
  * Shopify owns webhook signature creation; subscriptions cannot define a
  * custom signing secret.
  */
@@ -160,7 +166,7 @@ export async function registerOrderWebhook(store: ShopifyStore): Promise<string 
     webhookSubscriptions: { nodes: Array<{ id: string; uri: string }> };
   }>(store, `query ExistingOrdersWebhooks($topics: [WebhookSubscriptionTopic!]) {
     webhookSubscriptions(first: 100, topics: $topics) { nodes { id uri } }
-  }`, { topics: ["ORDERS_CREATE"] });
+  }`, { topics: ["ORDERS_PAID"] });
   const existingSubscription = existing?.webhookSubscriptions.nodes[0];
   if (existingSubscription?.uri === webhookAddress) return getWebhookSecret(store);
 
@@ -189,7 +195,7 @@ export async function registerOrderWebhook(store: ShopifyStore): Promise<string 
       userErrors { message }
     }
   }`, {
-    topic: "ORDERS_CREATE",
+    topic: "ORDERS_PAID",
     subscription: { uri: webhookAddress },
   });
   const errors = data?.webhookSubscriptionCreate.userErrors ?? [];

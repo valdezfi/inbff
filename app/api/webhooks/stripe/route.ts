@@ -25,8 +25,8 @@ const stripe = stripeKey
 
 // Next.js App Router streams the raw body — no body-parser config needed.
 export async function POST(req: NextRequest) {
-  if (!stripe) {
-    return NextResponse.json({ error: "Stripe not configured." }, { status: 503 });
+  if (!stripe || !webhookSecret) {
+    return NextResponse.json({ error: "Stripe webhook credentials are not configured." }, { status: 503 });
   }
 
   const rawBody = await req.text();
@@ -34,25 +34,12 @@ export async function POST(req: NextRequest) {
 
   let event: Stripe.Event;
 
-  if (webhookSecret) {
-    try {
+  try {
       event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-    } catch (err) {
+  } catch (err) {
       const msg = err instanceof Error ? err.message : "Webhook signature verification failed.";
       console.error("[stripe webhook] signature error:", msg);
       return NextResponse.json({ error: msg }, { status: 400 });
-    }
-  } else {
-    // No webhook secret — accept unsigned events in dev only.
-    console.warn(
-      "[stripe webhook] STRIPE_WEBHOOK_SECRET not set — " +
-      "skipping signature verification. Set it before going to production."
-    );
-    try {
-      event = JSON.parse(rawBody) as Stripe.Event;
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
-    }
   }
 
   try {
