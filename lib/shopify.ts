@@ -239,6 +239,21 @@ export function getShopifyRedirectUri(appUrl: string | undefined, requestUrl: st
   return new URL("/api/shopify/callback", origin).toString();
 }
 
+/** Return a safe bare Shopify subdomain from a brand-entered store value. */
+export function normalizeShopifyShopDomain(value: string): string | null {
+  const input = value.trim().toLowerCase();
+  if (!input) return null;
+  try {
+    const hostname = new URL(input.includes("://") ? input : `https://${input}`).hostname;
+    const name = hostname.endsWith(".myshopify.com")
+      ? hostname.slice(0, -".myshopify.com".length)
+      : hostname;
+    return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(name) ? name : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Verify Shopify OAuth HMAC on the callback query params. */
 export function verifyOAuthHmac(
   searchParams: URLSearchParams,

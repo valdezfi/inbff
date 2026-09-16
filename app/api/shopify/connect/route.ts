@@ -16,14 +16,11 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getShopifyRedirectUri } from "@/lib/shopify";
+import { getShopifyRedirectUri, normalizeShopifyShopDomain } from "@/lib/shopify";
 import { z } from "zod";
 
 const schema = z.object({
-  shopDomain: z
-    .string()
-    .min(2, "Enter a valid store name.")
-    .regex(/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$/, "Use just the store name, e.g. my-shop"),
+  shopDomain: z.string().min(2, "Enter a valid Shopify store name."),
 });
 
 export async function POST(req: NextRequest) {
@@ -47,14 +44,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
-  const shopDomain = `${parsed.data.shopDomain.toLowerCase()}.myshopify.com`;
+  const shopName = normalizeShopifyShopDomain(parsed.data.shopDomain);
+  if (!shopName) {
+    return NextResponse.json({ error: "Use a valid .myshopify.com store address." }, { status: 400 });
+  }
+  const shopDomain = `${shopName}.myshopify.com`;
   const apiKey     = process.env.SHOPIFY_API_KEY;
   const redirectUri = getShopifyRedirectUri(process.env.NEXT_PUBLIC_APP_URL, req.url);
   const scopes     = process.env.SHOPIFY_SCOPES ?? "read_orders,read_products";
 
   if (!apiKey) {
     return NextResponse.json(
-      { error: "Shopify API credentials are not configured for direct connection. Please use the Unified.to connection or configure the environment variables." },
+      { error: "Shopify API credentials are not configured. Add SHOPIFY_API_KEY and SHOPIFY_API_SECRET to the deployment." },
       { status: 503 }
     );
   }

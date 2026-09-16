@@ -17,20 +17,25 @@ function ConnectShopifyInner() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
+  const [shopDomain, setShopDomain] = useState("");
 
   useEffect(() => {
     const e = searchParams.get("error");
     if (e) setError(errorMessages[e] ?? "Something went wrong during Shopify authorization.");
   }, [searchParams]);
 
-  async function connectUnified() {
+  async function connectShopify() {
     setError(null);
+    if (!shopDomain.trim()) {
+      setError("Enter your Shopify store address to continue.");
+      return;
+    }
     setLoading(true);
     try {
-      const res  = await fetch("/api/shopify/unified/connect", {
+      const res  = await fetch("/api/shopify/connect", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({}),
+        body:    JSON.stringify({ shopDomain }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -98,8 +103,18 @@ function ConnectShopifyInner() {
           ))}
         </div>
 
+        <label htmlFor="shop-domain" className="block text-sm font-semibold text-slate-700 mb-2">Shopify store address</label>
+        <input
+          id="shop-domain"
+          value={shopDomain}
+          onChange={(event) => setShopDomain(event.target.value)}
+          placeholder="ka8v6x-8k.myshopify.com"
+          autoComplete="url"
+          className="w-full rounded-xl border border-indigo-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 mb-5"
+        />
+
         <button
-          onClick={connectUnified}
+          onClick={connectShopify}
           disabled={loading}
           className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:brightness-105 transition-all disabled:opacity-60"
         >

@@ -1,6 +1,6 @@
 import { createHmac } from "crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { decodeOAuthState, getShopifyRedirectUri, getWebhookSecret, verifyWebhookHmac } from "./shopify";
+import { decodeOAuthState, getShopifyRedirectUri, getWebhookSecret, normalizeShopifyShopDomain, verifyWebhookHmac } from "./shopify";
 import type { ShopifyStore } from "./types";
 
 const store: ShopifyStore = {
@@ -38,5 +38,11 @@ describe("Shopify OAuth redirect URI", () => {
   it("uses the incoming host when no canonical application URL is configured", () => {
     expect(getShopifyRedirectUri(undefined, "https://preview.inbff.com/api/shopify/connect"))
       .toBe("https://preview.inbff.com/api/shopify/callback");
+  });
+});
+
+describe("Shopify store domains", () => {
+  it("accepts the full store URL entered by a brand", () => {
+    expect(normalizeShopifyShopDomain("https://ka8v6x-8k.myshopify.com/")).toBe("ka8v6x-8k");
   });
 });
