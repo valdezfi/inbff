@@ -62,7 +62,7 @@ export default async function MarketplacePage({
           <p className="font-mono text-xs uppercase tracking-widest text-[#3B82F6] mb-3">Marketplace</p>
           <h1 className="text-3xl font-bold tracking-tight md:text-5xl">Find a program to promote</h1>
           <p className="mt-4 text-white/60 max-w-xl">
-            {stats.totalPrograms} live programs · {stats.totalAffiliates.toLocaleString()} affiliates earning · ${stats.totalPaid.toLocaleString(undefined, { maximumFractionDigits: 0 })} paid out
+            {stats?.totalPrograms ?? 0} live programs · {Number(stats?.totalAffiliates || 0).toLocaleString()} affiliates earning · ${Number(stats?.totalPaid || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} paid out
           </p>
 
           {/* Search */}

@@ -402,7 +402,7 @@ export async function findActivePrograms(opts: {
 
   const where = conditions.join(' AND ');
   const order = sort === 'commission' ? 'ap.commission_rate DESC'
-              : sort === 'affiliates' ? 'aff_count DESC'
+              : sort === 'affiliates' ? 'affiliateCount DESC'
               : 'ap.created_at DESC';
 
   interface MarketRow extends RowDataPacket {
@@ -418,12 +418,10 @@ export async function findActivePrograms(opts: {
            ap.attribution_window_days AS attributionWindowDays,
            ss.shop_domain AS shopDomain,
            ap.created_at AS createdAt,
-           COUNT(af.id) AS affiliateCount
+           (SELECT COUNT(*) FROM affiliates af WHERE af.program_id = ap.id AND af.status = 'active') AS affiliateCount
     FROM affiliate_programs ap
     JOIN shopify_stores ss ON ss.id = ap.store_id
-    LEFT JOIN affiliates af ON af.program_id = ap.id AND af.status = 'active'
     WHERE ${where}
-    GROUP BY ap.id, ss.shop_domain
     ORDER BY ${order}
     LIMIT ? OFFSET ?`, [...values, limit, offset]);
 
@@ -491,7 +489,11 @@ export async function getMarketplaceStats(): Promise<{ totalPrograms: number; to
       (SELECT COUNT(*) FROM affiliate_programs WHERE status='active')   AS totalPrograms,
       (SELECT COUNT(*) FROM affiliates WHERE status='active')           AS totalAffiliates,
       (SELECT COALESCE(SUM(amount),0) FROM commissions WHERE status='paid') AS totalPaid`);
-  return rows[0];
+  return {
+    totalPrograms: Number(rows[0]?.totalPrograms || 0),
+    totalAffiliates: Number(rows[0]?.totalAffiliates || 0),
+    totalPaid: Number(rows[0]?.totalPaid || 0),
+  };
 }
 
 export async function getPlatformAdminStats(): Promise<{
