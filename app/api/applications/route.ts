@@ -59,18 +59,28 @@ export async function POST(req: NextRequest) {
 
   // Open program → instant join with collision-safe code
   if (program.programType === "open") {
+    const referralCode = await generateUniqueReferralCode(db.findAffiliateByCodeAnyStatus);
+    const discountCode = "REF-" + nanoid(6).toUpperCase();
+
+    const store = await db.findStoreById(program.storeId);
+    if (store) {
+      const { createAffiliateDiscountCode } = await import("@/lib/shopify");
+      await createAffiliateDiscountCode(store, discountCode).catch(console.error);
+    }
+
     const affiliate = await db.createAffiliate({
       id:           nanoid(),
       programId,
       userId:       session.userId,
       name:         user.name,
       email:        user.email,
-      referralCode: await generateUniqueReferralCode(db.findAffiliateByCodeAnyStatus),
+      referralCode,
+      discountCode,
       status:       "active",
     });
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     const referralUrl = buildReferralUrl(appUrl, affiliate.referralCode);
-    return NextResponse.json({ status: "joined", referralCode: affiliate.referralCode, referralUrl });
+    return NextResponse.json({ status: "joined", referralCode: affiliate.referralCode, discountCode, referralUrl });
   }
 
   // Approval-based → create application

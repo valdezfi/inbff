@@ -14,7 +14,7 @@ const errorMessages: Record<string, string> = {
   "token-exchange-failed": "Shopify authorization expired or failed. Start the connection again.",
   "invalid-state":                 "Session expired. Please try again.",
   "no-connection-id":              "Connection failed — please retry.",
-  "unified-integration-disabled":  "Shopify integration is not enabled in your Unified.to workspace. Enable it in your Unified.to dashboard and try again.",
+
 };
 
 function ConnectShopifyInner() {

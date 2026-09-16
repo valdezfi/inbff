@@ -31,6 +31,7 @@ interface ShopifyOrderPayload {
   total_price: string;
   currency: string;
   financial_status?: string;
+  discount_codes?: { code: string; type?: string; amount?: string }[];
   note_attributes?: { name: string; value: string }[];
   landing_site?: string;
   line_items?: ShopifyLineItem[];
@@ -75,24 +76,45 @@ export async function POST(req: NextRequest) {
   const shopifyOrderId = String(payload.id);
   const currency       = payload.currency ?? "USD";
 
-  // ── Extract referral code ──────────────────────────────────────────────────
-  // Check note_attributes first (set by Shopify checkout snippet / Checkout UI Extension)
-  let referralCode: string | null =
-    payload.note_attributes?.find(a => ["referly_ref", "ref"].includes(a.name.toLowerCase()))?.value?.trim() ?? null;
+  // ── Extract affiliate ──────────────────────────────────────────────────────
+  let affiliate = null;
+  let referralCode: string | null = null;
 
-  // Fallback: parse ?ref= from the landing_site URL
-  if (!referralCode && payload.landing_site) {
-    try {
-      const landingUrl = payload.landing_site.startsWith("http")
-        ? payload.landing_site
-        : `https://${shopDomain}${payload.landing_site}`;
-      referralCode = new URL(landingUrl).searchParams.get("ref");
-    } catch { /* ignore malformed URLs */ }
+  // 1. Check if a known discount code was used (Primary attribution method)
+  if (payload.discount_codes) {
+    for (const dc of payload.discount_codes) {
+      const found = await db.findAffiliateByDiscountCode(dc.code);
+      if (found) {
+        affiliate = found;
+        referralCode = found.referralCode;
+        break;
+      }
+    }
   }
 
-  referralCode = referralCode ? normalizeReferralCode(referralCode) : null;
-  const affiliate = referralCode ? await db.findAffiliateByCode(referralCode) : null;
-  const program   = affiliate    ? await db.findProgramById(affiliate.programId) : null;
+  // 2. Check note_attributes and landing site (Fallback cookie attribution)
+  if (!affiliate) {
+    let rawCode: string | null =
+      payload.note_attributes?.find(a => ["referly_ref", "ref"].includes(a.name.toLowerCase()))?.value?.trim() ?? null;
+
+    if (!rawCode && payload.landing_site) {
+      try {
+        const landingUrl = payload.landing_site.startsWith("http")
+          ? payload.landing_site
+          : `https://${shopDomain}${payload.landing_site}`;
+        rawCode = new URL(landingUrl).searchParams.get("ref");
+      } catch { /* ignore malformed URLs */ }
+    }
+
+    if (rawCode) {
+      referralCode = normalizeReferralCode(rawCode);
+      if (referralCode) {
+        affiliate = await db.findAffiliateByCode(referralCode);
+      }
+    }
+  }
+
+  const program = affiliate ? await db.findProgramById(affiliate.programId) : null;
 
   // ── Attribution window check ───────────────────────────────────────────────
   const lastClick = referralCode ? await db.findLatestClickByCode(referralCode) : null;
@@ -152,12 +174,14 @@ export async function POST(req: NextRequest) {
     if (!Number.isFinite(commissionAmount) || commissionAmount <= 0) {
       return NextResponse.json({ ok: true, order: { id: order.id }, commission: null });
     }
+    const platformFee = Math.round(amount * 0.02 * 100) / 100; // 2% platform cut
     commission = await db.createCommission({
       id:          nanoid(),
       orderId:     order.id,
       affiliateId: affiliate.id,
       programId:   program.id,
       amount:      commissionAmount,
+      platformFee,
       rate:        program.commissionRate,
       status:      "pending",
     });

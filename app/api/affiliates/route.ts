@@ -73,6 +73,15 @@ export async function POST(req: NextRequest) {
 
   // Generate a collision-safe unique referral code
   const referralCode = await generateUniqueReferralCode(db.findAffiliateByCodeAnyStatus);
+  const discountCode = "REF-" + nanoid(6).toUpperCase();
+
+  const store = await db.findStoresByUserId(program.userId)
+    .then(stores => stores.find(s => s.id === program.storeId));
+
+  if (store) {
+    const { createAffiliateDiscountCode } = await import("@/lib/shopify");
+    await createAffiliateDiscountCode(store, discountCode).catch(console.error);
+  }
 
   const affiliate = await db.createAffiliate({
     id:           nanoid(),
@@ -81,11 +90,9 @@ export async function POST(req: NextRequest) {
     name,
     email,
     referralCode,
+    discountCode,
     status:       "active",
   });
-
-  const store = await db.findStoresByUserId(program.userId)
-    .then(stores => stores.find(s => s.id === program.storeId));
 
   return NextResponse.json({
     affiliate,

@@ -9,13 +9,13 @@
  *             joins programs and earns commissions via referral links.
  *             Routes to /affiliate/dashboard
  */
-export type UserRole = "brand" | "creator";
+export type UserRole = "brand" | "creator" | "platform_admin";
 export type ProgramType = "open" | "approval";
 export type ProgramStatus = "draft" | "active" | "paused" | "deleted";
 export type PayoutSchedule = "manual" | "weekly" | "monthly";
 export type AffiliateStatus = "active" | "paused";
 export type ApplicationStatus = "pending" | "approved" | "rejected";
-export type CommissionStatus = "pending" | "paid";
+export type CommissionStatus = "pending" | "paid" | "refunded" | "cancelled";
 
 // ─── Core entities ────────────────────────────────────────────────────────────
 
@@ -78,6 +78,7 @@ export interface Affiliate {
   name: string;
   email: string;
   referralCode: string;
+  discountCode: string | null;
   status: AffiliateStatus;
   joinedAt: string;
 }
@@ -120,6 +121,7 @@ export interface Commission {
   affiliateId: string;
   programId: string;
   amount: number;
+  platformFee: number;
   rate: number;
   status: CommissionStatus;
   createdAt: string;

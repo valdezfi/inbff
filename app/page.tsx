@@ -16,11 +16,6 @@ export default async function Home({
 }) {
   const params = await searchParams;
 
-  // Unified.to sometimes appends errors to the root URL instead of using
-  // the error_redirect — catch them here and forward to the connect page.
-  if (params.error) {
-    redirect("/dashboard/connect-shopify?error=unified-integration-disabled");
-  }
 
   const session = await getSession();
   if (session) {

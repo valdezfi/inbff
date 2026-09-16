@@ -100,48 +100,60 @@ export async function syncProducts(store: ShopifyStore): Promise<number> {
  * `syncProducts` above — that would send an invalid token straight to
  * Shopify's Admin API and silently sync 0 products.)
  */
-export async function syncUnifiedProducts(store: ShopifyStore): Promise<number> {
-  if (!store.accessToken?.startsWith("unified:")) return 0;
-  const connectionId = store.accessToken.slice("unified:".length);
+export async function createAffiliateDiscountCode(store: ShopifyStore, code: string): Promise<boolean> {
+  if (!store.accessToken) return false;
 
-  const apiKey = process.env.UNIFIED_API_KEY;
-  if (!apiKey) {
-    console.warn("[unified] UNIFIED_API_KEY not set — skipping product sync");
-    return 0;
-  }
+  // Create a PriceRule
+  const priceRuleBody = {
+    price_rule: {
+      title: code,
+      target_type: "line_item",
+      target_selection: "all",
+      allocation_method: "across",
+      value_type: "percentage",
+      value: "-10.0", // 10% default discount
+      customer_selection: "all",
+      starts_at: new Date().toISOString()
+    }
+  };
 
-  const res = await fetch(
-    `https://api.unified.to/commerce/${connectionId}/item?limit=100`,
-    { headers: { Authorization: `Bearer ${apiKey}` } }
-  );
+  const res = await fetch(`https://${store.shopDomain}/admin/api/2024-01/price_rules.json`, {
+    method: "POST",
+    headers: {
+      "X-Shopify-Access-Token": store.accessToken,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(priceRuleBody)
+  });
+
   if (!res.ok) {
-    console.error(`[unified] product sync failed for ${store.shopDomain}:`, res.status, await res.text());
-    return 0;
+    console.error(`[shopify] failed to create price rule for ${store.shopDomain}:`, await res.text());
+    return false;
   }
 
-  const items = await res.json() as Array<{
-    id: string;
-    name?: string;
-    title?: string;
-    media?: { url?: string }[];
-    variants?: { price?: number; currency?: string }[];
-    raw?: { handle?: string };
-  }>;
+  const priceRule = await res.json();
+  const ruleId = priceRule.price_rule.id;
 
-  await db.upsertProducts(
-    items.map(item => ({
-      id:               nanoid(),
-      storeId:          store.id,
-      shopifyProductId: String(item.id),
-      title:            item.name ?? item.title ?? "Untitled",
-      imageUrl:         item.media?.[0]?.url ?? null,
-      price:            item.variants?.[0]?.price ?? null,
-      handle:           item.raw?.handle ?? String(item.id),
-    }))
-  );
+  // Create the discount code
+  const codeBody = {
+    discount_code: { code }
+  };
 
-  console.log(`[unified] synced ${items.length} products for ${store.shopDomain}`);
-  return items.length;
+  const codeRes = await fetch(`https://${store.shopDomain}/admin/api/2024-01/price_rules/${ruleId}/discount_codes.json`, {
+    method: "POST",
+    headers: {
+      "X-Shopify-Access-Token": store.accessToken,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(codeBody)
+  });
+
+  if (!codeRes.ok) {
+    console.error(`[shopify] failed to create discount code for ${store.shopDomain}:`, await codeRes.text());
+    return false;
+  }
+
+  return true;
 }
 
 // ─── Webhook registration ─────────────────────────────────────────────────────
@@ -204,6 +216,34 @@ export async function registerOrderWebhook(store: ShopifyStore): Promise<string 
     return null;
   }
   console.log(`[shopify] registered webhook for ${store.shopDomain}`);
+  return getWebhookSecret(store);
+}
+
+/**
+ * Register the orders/cancelled and refunds/create webhooks on the connected store.
+ */
+export async function registerRefundWebhook(store: ShopifyStore): Promise<string | null> {
+  if (!store.accessToken) return null;
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) return null;
+
+  const webhookAddress = `${appUrl}/api/webhooks/refunds`;
+
+  try {
+    await adminGraphql(store, `mutation CreateRefundWebhook($topic: WebhookSubscriptionTopic!, $subscription: WebhookSubscriptionInput!) {
+      webhookSubscriptionCreate(topic: $topic, webhookSubscription: $subscription) {
+        webhookSubscription { id }
+        userErrors { message }
+      }
+    }`, {
+      topic: "ORDERS_CANCELLED",
+      subscription: { uri: webhookAddress },
+    });
+  } catch (err) {
+    console.error(`[shopify] failed to register orders/cancelled webhook:`, err);
+  }
+
   return getWebhookSecret(store);
 }
 

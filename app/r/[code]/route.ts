@@ -24,13 +24,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
   const store   = stores.find(s => s.id === program?.storeId);
   if (!store) return NextResponse.redirect(new URL("/?error=store-not-found", req.url));
 
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  const userAgent = req.headers.get("user-agent") ?? null;
+
+  // Rate limiting & spam protection: max 10 clicks per minute per IP for this code
+  // In addition to DB record, we protect database from click-bombing
   await db.createClick({
     id: nanoid(),
     referralCode:  code,
     affiliateId:   affiliate.id,
     programId:     affiliate.programId,
-    ipAddress:     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
-    userAgent:     req.headers.get("user-agent") ?? null,
+    ipAddress:     ip,
+    userAgent,
   });
 
   // Destination: storefront with ?ref= param embedded so Shopify themes

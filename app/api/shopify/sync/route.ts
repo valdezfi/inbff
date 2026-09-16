@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const store = stores.find(s => s.id === parsed.data.storeId);
   if (!store) return NextResponse.json({ error: "Store not found." }, { status: 404 });
 
-  if (!store.accessToken || store.accessToken.startsWith('unified:')) {
+  if (!store.accessToken) {
     return NextResponse.json({ error: "Store has no access token — complete OAuth first." }, { status: 400 });
   }
 

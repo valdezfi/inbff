@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
         affiliateId: affiliate.id,
         programId: program.id,
         amount: commissionAmount,
+        platformFee: Math.round(amount * 0.02 * 100) / 100,
         rate: program.commissionRate,
         status: "pending",
       });

@@ -242,12 +242,6 @@ export async function findStoreById(id: string): Promise<ShopifyStore | null> {
   return rows[0] ?? null;
 }
 
-export async function findStoreByAccessToken(accessToken: string): Promise<ShopifyStore | null> {
-  if (!useMySQL) return getJson().read().stores.find(s => s.accessToken === accessToken) ?? null;
-  const rows = await q<StoreRow>(`SELECT ${STORE_SELECT} FROM shopify_stores WHERE access_token=? LIMIT 1`, [accessToken]);
-  return rows[0] ?? null;
-}
-
 export async function upsertStore(store: Omit<ShopifyStore, 'connectedAt'>): Promise<ShopifyStore> {
   if (!useMySQL) {
     let result!: ShopifyStore;
@@ -500,12 +494,47 @@ export async function getMarketplaceStats(): Promise<{ totalPrograms: number; to
   return rows[0];
 }
 
+export async function getPlatformAdminStats(): Promise<{
+  totalGmv: number;
+  totalPlatformRevenue: number;
+  totalOrders: number;
+  activeBrands: number;
+  activeCreators: number;
+}> {
+  if (!useMySQL) {
+    const data = getJson().read();
+    return {
+      totalGmv: data.orders.reduce((sum, o) => sum + (o.amount || 0), 0),
+      totalPlatformRevenue: data.commissions.reduce((sum, c) => sum + (c.platformFee || 0), 0),
+      totalOrders: data.orders.length,
+      activeBrands: data.users.filter(u => u.role === 'brand').length,
+      activeCreators: data.users.filter(u => u.role === 'creator').length,
+    };
+  }
+  interface AdminStatsRow extends RowDataPacket {
+    totalGmv: number;
+    totalPlatformRevenue: number;
+    totalOrders: number;
+    activeBrands: number;
+    activeCreators: number;
+  }
+  const rows = await q<AdminStatsRow>(`
+    SELECT
+      (SELECT COALESCE(SUM(amount),0) FROM orders) AS totalGmv,
+      (SELECT COALESCE(SUM(platform_fee),0) FROM commissions) AS totalPlatformRevenue,
+      (SELECT COUNT(*) FROM orders) AS totalOrders,
+      (SELECT COUNT(*) FROM users WHERE role='brand') AS activeBrands,
+      (SELECT COUNT(*) FROM users WHERE role='creator') AS activeCreators
+  `);
+  return rows[0];
+}
+
 // ─── Affiliates ───────────────────────────────────────────────────────────────
 interface AffiliateRow extends RowDataPacket {
   id: string; programId: string; userId: string | null;
   name: string; email: string; referralCode: string; status: string; joinedAt: string;
 }
-const AFFILIATE_SELECT = `id, program_id AS programId, user_id AS userId, name, email, referral_code AS referralCode, status, joined_at AS joinedAt`;
+const AFFILIATE_SELECT = `id, program_id AS programId, user_id AS userId, name, email, referral_code AS referralCode, discount_code AS discountCode, status, joined_at AS joinedAt`;
 
 export async function findAffiliatesByProgramId(programId: string): Promise<Affiliate[]> {
   if (!useMySQL) return getJson().read().affiliates.filter(a => a.programId === programId);
@@ -515,6 +544,12 @@ export async function findAffiliatesByProgramId(programId: string): Promise<Affi
 export async function findAffiliateByCode(code: string): Promise<Affiliate | null> {
   if (!useMySQL) return getJson().read().affiliates.find(a => a.referralCode === code && a.status === 'active') ?? null;
   const rows = await q<AffiliateRow>(`SELECT ${AFFILIATE_SELECT} FROM affiliates WHERE referral_code=? AND status='active' LIMIT 1`, [code]);
+  return (rows[0] ?? null) as unknown as Affiliate | null;
+}
+
+export async function findAffiliateByDiscountCode(discountCode: string): Promise<Affiliate | null> {
+  if (!useMySQL) return getJson().read().affiliates.find(a => a.discountCode?.toLowerCase() === discountCode.toLowerCase() && a.status === 'active') ?? null;
+  const rows = await q<AffiliateRow>(`SELECT ${AFFILIATE_SELECT} FROM affiliates WHERE LOWER(discount_code)=LOWER(?) AND status='active' LIMIT 1`, [discountCode]);
   return (rows[0] ?? null) as unknown as Affiliate | null;
 }
 
@@ -550,8 +585,8 @@ export async function createAffiliate(affiliate: Omit<Affiliate, 'joinedAt'>): P
     return n;
   }
   await exec(
-    `INSERT INTO affiliates (id,program_id,user_id,name,email,referral_code,status) VALUES (?,?,?,?,?,?,?)`,
-    [affiliate.id, affiliate.programId, affiliate.userId, affiliate.name, affiliate.email, affiliate.referralCode, affiliate.status]
+    `INSERT INTO affiliates (id,program_id,user_id,name,email,referral_code,discount_code,status) VALUES (?,?,?,?,?,?,?,?)`,
+    [affiliate.id, affiliate.programId, affiliate.userId, affiliate.name, affiliate.email, affiliate.referralCode, affiliate.discountCode, affiliate.status]
   );
   const rows = await q<AffiliateRow>(`SELECT ${AFFILIATE_SELECT} FROM affiliates WHERE id=? LIMIT 1`, [affiliate.id]);
   return rows[0]! as unknown as Affiliate;
@@ -673,6 +708,12 @@ export async function findOrdersByProgramId(programId: string): Promise<Order[]>
   return q<OrderRow>(`SELECT ${ORDER_SELECT} FROM orders WHERE program_id=? ORDER BY created_at DESC`, [programId]);
 }
 
+export async function findOrderByStoreAndShopifyId(storeId: string, shopifyOrderId: string): Promise<Order | null> {
+  if (!useMySQL) return getJson().read().orders.find(o => o.storeId === storeId && o.shopifyOrderId === shopifyOrderId) ?? null;
+  const rows = await q<OrderRow>(`SELECT ${ORDER_SELECT} FROM orders WHERE store_id=? AND shopify_order_id=? LIMIT 1`, [storeId, shopifyOrderId]);
+  return rows[0] ?? null;
+}
+
 export async function createOrder(order: Omit<Order, 'createdAt'>): Promise<Order> {
   if (!useMySQL) {
     let result!: Order;
@@ -702,7 +743,7 @@ interface CommissionRow extends RowDataPacket {
   amount: number; rate: number; status: string;
   createdAt: string; paidAt: string | null; stripeTransferId: string | null;
 }
-const COMMISSION_SELECT = `id, order_id AS orderId, affiliate_id AS affiliateId, program_id AS programId, amount, rate, status, created_at AS createdAt, paid_at AS paidAt, stripe_transfer_id AS stripeTransferId`;
+const COMMISSION_SELECT = `id, order_id AS orderId, affiliate_id AS affiliateId, program_id AS programId, amount, platform_fee AS platformFee, rate, status, created_at AS createdAt, paid_at AS paidAt, stripe_transfer_id AS stripeTransferId`;
 
 export async function findCommissionsByProgramIds(programIds: string[]): Promise<Commission[]> {
   if (programIds.length === 0) return [];
@@ -756,8 +797,8 @@ export async function createCommission(commission: Omit<Commission, 'createdAt' 
     });
   }
   await exec(
-    `INSERT INTO commissions (id,order_id,affiliate_id,program_id,amount,rate,status) VALUES (?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE id=id`,
-    [commission.id, commission.orderId, commission.affiliateId, commission.programId, commission.amount, commission.rate, commission.status]
+    `INSERT INTO commissions (id,order_id,affiliate_id,program_id,amount,platform_fee,rate,status) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE id=id`,
+    [commission.id, commission.orderId, commission.affiliateId, commission.programId, commission.amount, commission.platformFee, commission.rate, commission.status]
   );
   const rows = await q<CommissionRow>(`SELECT ${COMMISSION_SELECT} FROM commissions WHERE order_id=? LIMIT 1`, [commission.orderId]);
   return rows[0]! as unknown as Commission;
@@ -813,23 +854,36 @@ export async function revertCommissionToPending(id: string): Promise<Commission 
   return findCommissionById(id);
 }
 
+export async function updateCommissionStatus(id: string, status: 'refunded' | 'cancelled'): Promise<Commission | null> {
+  if (!useMySQL) {
+    let updated: Commission | null = null;
+    await getJson().tx(db => {
+      const c = db.commissions.find(c => c.id === id);
+      if (c) { c.status = status; updated = c; }
+    });
+    return updated;
+  }
+  await exec(`UPDATE commissions SET status=? WHERE id=?`, [status, id]);
+  return findCommissionById(id);
+}
+
 // ─── Convenience re-export (keeps any existing `import * as db` usage working) ─
 const _db = {
   read, transaction,
   findUserByEmail, findUserById, findUserByVerificationToken,
   createUser, verifyUserEmail, updateVerificationToken, updateUserRole, updateUserStripeAccount,
-  findStoresByUserId, findStoreByDomain, findStoreByUserAndDomain, findStoreById, findStoreByAccessToken, upsertStore,
+  findStoresByUserId, findStoreByDomain, findStoreByUserAndDomain, findStoreById, upsertStore,
   findProductsByStoreId, upsertProducts, findProgramProductIds, setProgramProducts,
-  findProgramsByUserId, findProgramById, findActivePrograms, createProgram, updateProgram, getMarketplaceStats,
-  findAffiliatesByProgramId, findAffiliateByCode, findAffiliateByCodeAnyStatus, findAffiliateByProgramAndEmail, findAffiliatesByUserId,
+  findProgramsByUserId, findProgramById, findActivePrograms, createProgram, updateProgram, getMarketplaceStats, getPlatformAdminStats,
+  findAffiliatesByProgramId, findAffiliateByCode, findAffiliateByCodeAnyStatus, findAffiliateByProgramAndEmail, findAffiliatesByUserId, findAffiliateByDiscountCode,
   createAffiliate, updateAffiliateStatus,
   findApplicationsByProgramId, findApplicationByProgramAndUser, createApplication, updateApplicationStatus,
   createClick, countClicksByAffiliateId, countClicksByProgramId, findLatestClickByCode,
-  findOrdersByProgramId, createOrder,
+  findOrdersByProgramId, findOrderByStoreAndShopifyId, createOrder,
   findCommissionsByProgramIds, findCommissionsByAffiliateId, findPendingCommissionsByAffiliateId,
   findPendingCommissionsByAffiliateAndProgram,
   findCommissionById, findCommissionByOrderId, createCommission, markCommissionPaid, markCommissionsPaid,
-  revertCommissionToPending,
+  revertCommissionToPending, updateCommissionStatus
 };
 
 /** Named export — supports `import { db } from "@/lib/db"` */

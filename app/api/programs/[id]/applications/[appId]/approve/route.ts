@@ -22,15 +22,24 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
   // Approve
   await db.updateApplicationStatus(appId, "approved");
 
-  // Create affiliate record linked to user
   const user = await db.findUserById(app.userId);
+  const referralCode = await generateUniqueReferralCode(db.findAffiliateByCodeAnyStatus);
+  const discountCode = "REF-" + nanoid(6).toUpperCase();
+
+  const store = await db.findStoreById(program.storeId);
+  if (store) {
+    const { createAffiliateDiscountCode } = await import("@/lib/shopify");
+    await createAffiliateDiscountCode(store, discountCode);
+  }
+
   const affiliate = await db.createAffiliate({
     id: nanoid(),
     programId,
     userId: app.userId,
     name: user?.name ?? "Affiliate",
     email: user?.email ?? "",
-    referralCode: await generateUniqueReferralCode(db.findAffiliateByCodeAnyStatus),
+    referralCode,
+    discountCode,
     status: "active",
   });
 
@@ -41,8 +50,8 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
     await sendEmail({
       to: user.email,
       subject: `You're approved for ${program.name}!`,
-      html: `<p>Hi ${user.name},</p><p>Your application to <strong>${program.name}</strong> has been approved.</p><p>Your referral link: <a href="${referralUrl}">${referralUrl}</a></p><p>Share it anywhere to start earning ${program.commissionRate}% on every sale.</p>`,
-      text: `Hi ${user.name},\n\nYou're approved for ${program.name}!\n\nYour referral link: ${referralUrl}\n\nEarn ${program.commissionRate}% on every sale.`,
+      html: `<p>Hi ${user.name},</p><p>Your application to <strong>${program.name}</strong> has been approved.</p><p>Your referral link: <a href="${referralUrl}">${referralUrl}</a></p><p>Your unique discount code for customers: <strong>${discountCode}</strong></p><p>Share it anywhere to start earning ${program.commissionRate}% on every sale.</p>`,
+      text: `Hi ${user.name},\n\nYou're approved for ${program.name}!\n\nYour referral link: ${referralUrl}\nYour discount code: ${discountCode}\n\nEarn ${program.commissionRate}% on every sale.`,
     }).catch(console.error);
   }
 

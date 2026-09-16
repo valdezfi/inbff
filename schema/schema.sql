@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
   name                      VARCHAR(255) NOT NULL,
   created_at                TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   role                      VARCHAR(20)  NOT NULL DEFAULT 'brand'
-                              CHECK (role IN ('brand','creator')),
+                              CHECK (role IN ('brand','creator','platform_admin')),
   email_verified            TINYINT(1)   NOT NULL DEFAULT 0,
   verification_token        VARCHAR(255) UNIQUE,
   verification_token_expiry TIMESTAMP(3) NULL,
@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS affiliates (
   name          VARCHAR(255) NOT NULL,
   email         VARCHAR(255) NOT NULL,
   referral_code VARCHAR(16)  NOT NULL UNIQUE,
+  discount_code VARCHAR(255) UNIQUE,
   status        VARCHAR(20)  NOT NULL DEFAULT 'active'
                   CHECK (status IN ('active','paused')),
   joined_at     TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -171,8 +172,9 @@ CREATE TABLE IF NOT EXISTS commissions (
   affiliate_id       VARCHAR(40)   NOT NULL,
   program_id         VARCHAR(40)   NOT NULL,
   amount             DECIMAL(12,2) NOT NULL,
+  platform_fee       DECIMAL(12,2) NOT NULL DEFAULT 0,
   rate               DECIMAL(5,2)  NOT NULL,
-  status             ENUM('pending','paid') NOT NULL DEFAULT 'pending',
+  status             ENUM('pending','paid','refunded','cancelled') NOT NULL DEFAULT 'pending',
   created_at         TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   paid_at            TIMESTAMP(3)  NULL,
   stripe_transfer_id VARCHAR(255),

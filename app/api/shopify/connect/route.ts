@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   const shopDomain = `${shopName}.myshopify.com`;
   const apiKey     = process.env.SHOPIFY_API_KEY;
   const redirectUri = getShopifyRedirectUri(process.env.NEXT_PUBLIC_APP_URL, req.url);
-  const scopes     = process.env.SHOPIFY_SCOPES ?? "read_orders,read_products";
+  const scopes     = process.env.SHOPIFY_SCOPES ?? "read_orders,read_products,write_discounts,write_script_tags";
 
   if (!apiKey || !process.env.SHOPIFY_API_SECRET) {
     return NextResponse.json(
