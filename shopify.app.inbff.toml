@@ -1,0 +1,17 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "9e099fcbad7589dea98d8809472291a1"
+name = "gapp"
+application_url = "https://inbff.com"
+embedded = false
+
+[access_scopes]
+scopes = "read_orders,read_products,write_discounts,write_script_tags"
+optional_scopes = []
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = [ "https://inbff.com/api/shopify/callback" ]
+
+[webhooks]
+api_version = "2026-10"
