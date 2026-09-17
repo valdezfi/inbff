@@ -11,7 +11,10 @@ optional_scopes = []
 use_legacy_install_flow = false
 
 [auth]
-redirect_urls = [ "https://inbff.com/api/shopify/callback" ]
+redirect_urls = [ 
+  "https://inbff.com/api/shopify/callback",
+  "http://localhost:3000/api/shopify/callback"
+]
 
 [webhooks]
 api_version = "2026-10"
