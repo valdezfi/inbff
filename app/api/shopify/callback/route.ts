@@ -103,7 +103,10 @@ export async function GET(req: NextRequest) {
   ]);
 
   // ── Redirect to program creation wizard ───────────────────────────────────
-  const response = NextResponse.redirect(new URL(`/dashboard/programs/new?storeId=${store.id}`, req.url));
+  // Use NEXT_PUBLIC_APP_URL as base to avoid redirecting to the internal
+  // server address (0.0.0.0:3000) on platforms like Heroku.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin;
+  const response = NextResponse.redirect(new URL(`/dashboard/programs/new?storeId=${store.id}`, appUrl));
   response.cookies.set("shopify_oauth_state", "", { path: "/api/shopify/callback", maxAge: 0 });
   return response;
 }
